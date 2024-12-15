@@ -1,6 +1,0 @@
-{
-  "profile": "esp32_profile",
-  "packages": [
-    "plotter"
-  ]
-}

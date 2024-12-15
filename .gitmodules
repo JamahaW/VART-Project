@@ -1,0 +1,6 @@
+[submodule "Code/VART-FirmWare"]
+	path = Code/VART-FirmWare
+	url = https://github.com/JamahaW/VART-FirmWare
+[submodule "Code/VART-DesktopApp"]
+	path = Code/VART-DesktopApp
+	url = https://github.com/JamahaW/VART-DesktopApp
