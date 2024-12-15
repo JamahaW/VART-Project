@@ -1,0 +1,59 @@
+{
+  "./Печать": {
+    "target": [
+      "stp",
+      "stl"
+    ],
+    "transformer": "3d_print_special"
+  },
+  "./Печать/Нарезка": {
+    "target": [
+      "gcode"
+    ],
+    "transformer": "translit"
+  },
+  "./Изображения": {
+    "target": [
+      "png",
+      "jpg"
+    ]
+  },
+  "./Видео": {
+    "target": [
+      "mp4"
+    ]
+  },
+  "./Документация/Презентации": {
+    "target": [
+      "pptx"
+    ]
+  },
+  "./Документация/Чертежи": {
+    "target": [
+      "cdw",
+      "spw"
+    ]
+  },
+  "./Документация": {
+    "target": [
+      "pdf",
+      "docx"
+    ]
+  },
+  "./__Archive": {
+    "target": [
+      "zip",
+      "7z"
+    ]
+  },
+  "./__Trash": {
+    "target": [
+      "log",
+      "bak",
+      "a3~",
+      "png~",
+      "m3~",
+      "pyc"
+    ]
+  }
+}
