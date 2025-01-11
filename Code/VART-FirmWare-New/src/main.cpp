@@ -19,14 +19,6 @@ const int max_pwm_out = 255;
 /// @brief период Обновления регулятора в микросекундах
 const uint32_t update_period_us = 128;
 
-/// @brief Настройки регулятора скорости
-const PID::Config speed_config = {
-    .kp = 7.7843203545,
-    .ki = 4.1978969574,
-    .kd = 3.6650085449,
-    .max_out = max_pwm_out,
-    .max_i = max_pwm_out,
-};
 
 const tuner::PidTuner speed_pid_tuner = {
     .min_output = max_pwm_out,
@@ -47,26 +39,36 @@ const tuner::PidTuner position_pid_tuner{
     .cycles = 50,
 };
 
-/// @brief Настройки регулятора позиции
-const PID::Config position_config = {
-    .kp = 8.4882631302,
-    .ki = 0.0355594568,
-    .kd = 1337.7160644531,
-    .max_out = max_speed_ticks_per_second,
-    .max_i = max_speed_ticks_per_second,
-};
-
 const ServoMotor::Config servo_config = {
     .update_period_seconds = update_period_us * 1e-6,
     .ready_max_abs_error = 1,
+    .speed_config = {
+        .kp = 7.7843203545,
+        .ki = 4.1978969574,
+        .kd = 3.6650085449,
+        .max_out = max_pwm_out,
+        .max_i = max_pwm_out,
+    },
+    .position_config = {
+        .kp = 8.4882631302,
+        .ki = 0.0355594568,
+        .kd = 1337.7160644531,
+        .max_out = max_speed_ticks_per_second,
+        .max_i = max_speed_ticks_per_second,
+    },
 };
 
 auto left_servo = ServoMotor(
     servo_config,
-    speed_config,
-    position_config,
     MotorDriverL293(vart::Pins::left_driver_a, vart::Pins::left_driver_b),
-    Encoder(vart::Pins::left_encoder_a, vart::Pins::left_encoder_b));
+    Encoder(vart::Pins::left_encoder_a, vart::Pins::left_encoder_b)
+);
+
+auto right_servo = ServoMotor(
+    servo_config,
+    MotorDriverL293(vart::Pins::right_driver_a, vart::Pins::right_driver_b),
+    Encoder(vart::Pins::right_encoder_a, vart::Pins::right_encoder_b)
+);
 
 #define logMsg(msg) Serial.print(msg)
 

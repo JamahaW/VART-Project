@@ -21,6 +21,12 @@ namespace hardware {
 
             /// Максимальная абсолютная ошибка позиционирования
             const uint8_t ready_max_abs_error;
+
+            /// Параметры регулятора скорости
+            const PID::Config speed_config;
+
+            /// Параметры регулятора позиции
+            const PID::Config position_config;
         };
     private:
 
@@ -51,16 +57,14 @@ namespace hardware {
     public:
         explicit ServoMotor(
             const Config &config,
-            const PID::Config &speed_config,
-            const PID::Config &position_config,
             const MotorDriverL293 &driver,
             const Encoder &encoder
         )
             :
             driver(driver),
             encoder(encoder),
-            speed_pid(speed_config),
-            position_pid(position_config),
+            speed_pid(config.speed_config),
+            position_pid(config.position_config),
             config(config) {}
 
         void disable() {
