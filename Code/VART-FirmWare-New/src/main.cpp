@@ -23,18 +23,22 @@ PID::Config speed_config = {
     .max_i = 255,
 };
 
+// tuner.getKp() = 8.4882631302
+//tuner.getKi() = 0.0355594568
+//tuner.getKd() = 1337.7160644531
+
 PID::Config position_config = {
-    .kp = 1,
-    .ki = 0,
-    .kd = 0,
-    .max_out = 1873.10,
-    .max_i = 1000,
+    .kp = 8.4882631302,
+    .ki = 0.0355594568,
+    .kd = 1337.7160644531,
+    .max_out = 150,
+    .max_i = 150,
 };
 
 ServoMotor::Config servo_config = {
     .update_period_seconds = 400 * 1e-6,
-    .ready_max_abs_error = 2,
-    .max_speed = 1894.0F,
+    .ready_max_abs_error = 1,
+    .max_speed = 150,
 };
 
 auto left_servo = ServoMotor(
@@ -49,9 +53,44 @@ auto left_servo = ServoMotor(
 #define log(x) Serial.print(#x " = "); Serial.println(x, 10)
 
 
-void tune(float target_input_value) {
+void tunePosition(float target_position, int32_t loop_period_us) {
+    const auto max_speed = 150;
+    uint32_t next_update_us;
+
+    auto tuner = PIDAutotuner();
+
+    log(target_position);
+
+    tuner.setTargetInputValue(target_position);
+    tuner.setLoopInterval(loop_period_us);
+    tuner.setOutputRange(-max_speed, max_speed);
+    tuner.setZNMode(PIDAutotuner::ZNModeNoOvershoot);
+//    tuner.setTuningCycles(1000);
+
+    tuner.startTuningLoop(micros());
+
+    while (!tuner.isFinished()) {
+        auto input = float(left_servo.encoder.getPosition());
+
+        float output = tuner.tunePID(input, micros());
+        left_servo.setSpeedLimit(output);
+        left_servo.update();
+
+        next_update_us = micros() + loop_period_us;
+        while (micros() < next_update_us) { delayMicroseconds(1); }
+    }
+
+    left_servo.driver.setPower(0);
+
+    log(tuner.getKp());
+    log(tuner.getKi());
+    log(tuner.getKd());
+
+    delay(100);
+}
+
+void tuneSpeed(float target_input_value) {
     const auto loop_period_us = 400;
-    const auto loop_period_seconds = float(loop_period_us * 1e-6);
 
     auto tuner = PIDAutotuner();
 
@@ -91,33 +130,25 @@ void tune(float target_input_value) {
     delay(100);
 }
 
-void goTime(double target_speed) {
+void goTimeReg(float target_speed) {
     const auto update_period = 400;
-    const float dt = update_period * 1e-6;
 
     log(target_speed);
+    left_servo.setSpeedLimit(target_speed);
 
     uint32_t end_time = millis() + 5000;
-
-    float avg_speed = 0;
-    uint32_t it = 0;
-
     while (millis() < end_time) {
-        float current_speed = left_servo.encoder.calcSpeed(dt);
-        avg_speed += current_speed;
-        it++;
-
-        double speed_error = target_speed - current_speed;
-
-        const auto power_u = int32_t(left_servo.speed_pid.calc(speed_error, dt));
-        left_servo.driver.setPower(power_u);
-
+        left_servo.update();
         delayMicroseconds(update_period);
     }
 
     left_servo.driver.setPower(0);
-    avg_speed /= float(it);
-    log(avg_speed);
+}
+
+void goDist(int32_t target) {
+    while (not left_servo.isReady()) {
+
+    }
 }
 
 float calcSpeed(int pwm) {
@@ -152,19 +183,14 @@ void setup() {
     analogWriteFrequency(30000);
     Serial.begin(9600);
 
-//    log(calcSpeed(255));
-
-//    const auto speed = 1873.10F;
-
     delay(1000);
 
-//    tune(50);
-    for (float speed = 60; speed < 160;) {
-        goTime(speed);
-        speed += 5.0F;
-    }
+    const auto loop_period_us = 128;
 
-//    goTime(100);
+    for (int target = 0, delta = 1; delta < 200; delta += 40, target += delta) {
+        log(delta);
+        tunePosition(float(target), loop_period_us);
+    }
 
     left_servo.encoder.disable();
 }

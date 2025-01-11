@@ -19,7 +19,7 @@ auto encoder = Encoder(vart::Pins::left_encoder_a, vart::Pins::left_encoder_b);
 #define log(x) Serial.print(#x "="); Serial.print(x); Serial.print('\t')
 
 
-void tune(float target_input_value) {
+void tuneSpeed(float target_input_value) {
     const auto loopInterval = 1000;
 
     auto tuner = PIDAutotuner();
@@ -59,8 +59,8 @@ void setup() {
     encoder.enable();
     Serial.begin(9600);
 
-    tune(10000);
-    tune(-10000);
+    tuneSpeed(10000);
+    tuneSpeed(-10000);
 
     encoder.disable();
 }

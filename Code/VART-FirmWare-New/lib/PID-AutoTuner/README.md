@@ -20,7 +20,7 @@ void setup() {
 
     PIDAutotuner tuner = PIDAutotuner();
 
-    // Set the target value to tune to
+    // Set the target value to tuneSpeed to
     // This will depend on what you are tuning. This should be set to a value within
     // the usual range of the setpoint. For low-inertia systems, values at the lower
     // end of this range usually give better results. For anything else, start with a

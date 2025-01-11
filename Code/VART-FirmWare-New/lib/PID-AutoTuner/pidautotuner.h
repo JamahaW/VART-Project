@@ -20,7 +20,7 @@ public:
 
     // Configure parameters for PID tuning
     // See README for more details - https://github.com/jackw01/arduino-pid-autotuner/blob/master/README.md
-    // targetInputValue: the target value to tune to
+    // targetInputValue: the target value to tuneSpeed to
     // loopInterval: PID loop interval in microseconds - must match whatever the PID loop being tuned runs at
     // outputRange: min and max values of the output that can be used to control the system (0, 255 for analogWrite)
     // znMode: Ziegler-Nichols tuning mode (znModeBasicPID, znModeLessOvershoot, znModeNoOvershoot)
@@ -38,7 +38,7 @@ public:
     // Must be called immediately before the tuning loop starts
     void startTuningLoop(unsigned long us);
 
-    // Automatically tune PID
+    // Automatically tuneSpeed PID
     // This function must be run in a loop at the same speed as the PID loop being tuned
     // See README for more details - https://github.com/jackw01/arduino-pid-autotuner/blob/master/README.md
     float tunePID(float input, unsigned long us);

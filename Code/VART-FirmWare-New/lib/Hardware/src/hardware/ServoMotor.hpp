@@ -73,11 +73,11 @@ namespace hardware {
 
         /// Обновить регулятор
         void update() {
-//            const float dt = config.update_period_seconds;
             const float dt = config.update_period_seconds;
-//            double speed_u = position_pid.calc(double(calcPositionError()), dt);
-//            speed_u = constrain(speed_u, -abs_speed_limit, abs_speed_limit);
-            const float speed_u = abs_speed_limit;
+
+            double speed_u = position_pid.calc(calcPositionError(), dt);
+
+            speed_u = constrain(speed_u, -config.max_speed, config.max_speed);
             double speed_error = speed_u - encoder.calcSpeed(dt);
 
             const auto power_u = int32_t(speed_pid.calc(speed_error, dt));
