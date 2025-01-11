@@ -36,7 +36,7 @@ void tuneSpeed(float target_input_value) {
 
     tuner.startTuningLoop(micros());
     while (!tuner.isFinished()) {
-        auto input = float(encoder.current_position_ticks);
+        auto input = float(encoder.getPosition());
 
         double output = tuner.tunePID(input, micros());
         driver.setPower(int32_t(output));

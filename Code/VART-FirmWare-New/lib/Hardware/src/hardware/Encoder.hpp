@@ -27,6 +27,9 @@ namespace hardware {
         /// Получить текущее положение
         int32_t getPosition() const;
 
+        /// Установить текущее положение
+        void setPosition(int32_t new_position_ticks);
+
         /// Расчитать текущую скорость
         float calcSpeed(float delta_seconds) const;
 

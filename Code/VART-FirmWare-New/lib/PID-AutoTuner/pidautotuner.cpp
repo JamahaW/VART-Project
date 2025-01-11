@@ -24,7 +24,7 @@ void PIDAutotuner::setOutputRange(float min_output, float max_output) {
 }
 
 /// Set Ziegler-Nichols tuning mode
-void PIDAutotuner::setZNMode(ZNMode zn) {
+void PIDAutotuner::setZNMode(Mode zn) {
     znMode = zn;
 }
 

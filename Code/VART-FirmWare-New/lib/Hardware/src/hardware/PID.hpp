@@ -5,14 +5,11 @@
 
 namespace hardware {
 
-    /// ПИД регулятор
+/// ПИД регулятор
     class PID {
-
     public:
-
         /// Параметры регулятора
         struct Config {
-
             /// KP
             const float kp;
 
@@ -33,7 +30,6 @@ namespace hardware {
         const Config &config;
 
     private:
-
         /// Интеграл
         mutable double integral{0};
 
@@ -41,7 +37,6 @@ namespace hardware {
         mutable double last_error{0};
 
     public:
-
         explicit PID(const Config &config) :
             config(config) {}
 
@@ -56,4 +51,4 @@ namespace hardware {
             return constrain(ret, -config.max_out, config.max_out);
         }
     };
-}
+}  // namespace hardware

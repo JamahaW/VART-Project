@@ -31,3 +31,7 @@ float hardware::Encoder::calcSpeed(float delta_seconds) const {
     last_position_ticks = getPosition();
     return ret;
 }
+
+void hardware::Encoder::setPosition(int32_t new_position_ticks) {
+    current_position_ticks = new_position_ticks;
+}

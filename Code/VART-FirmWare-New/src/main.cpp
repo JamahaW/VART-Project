@@ -1,11 +1,10 @@
 #include <Arduino.h>
 
-#include <pidautotuner.h>
-
+#include <TunePID.hpp>
 #include "vart/Pins.hpp"
 
-#include "hardware/MotorDriver.hpp"
 #include "hardware/Encoder.hpp"
+#include "hardware/MotorDriver.hpp"
 #include "hardware/ServoMotor.hpp"
 
 
@@ -14,31 +13,52 @@
 
 using namespace hardware;
 
+/// Максимальный вывод ШИМ
+const int max_pwm_out = 255;
 
-PID::Config speed_config = {
+/// @brief период Обновления регулятора в микросекундах
+const uint32_t update_period_us = 128;
+
+/// @brief Настройки регулятора скорости
+const PID::Config speed_config = {
     .kp = 7.7843203545,
     .ki = 4.1978969574,
     .kd = 3.6650085449,
-    .max_out = 255,
-    .max_i = 255,
+    .max_out = max_pwm_out,
+    .max_i = max_pwm_out,
 };
 
-// tuner.getKp() = 8.4882631302
-//tuner.getKi() = 0.0355594568
-//tuner.getKd() = 1337.7160644531
+const tuner::PidTuner speed_pid_tuner = {
+    .min_output = max_pwm_out,
+    .max_output = max_pwm_out,
+    .mode = PIDAutotuner::Mode::ZNModeBasicPID,
+    .loop_period_us = update_period_us,
+    .cycles = 10,
+};
 
-PID::Config position_config = {
+/// Максимальная скорость в тиках в секунду
+const float max_speed_ticks_per_second = 200;
+
+const tuner::PidTuner position_pid_tuner{
+    .min_output = -max_speed_ticks_per_second,
+    .max_output = max_speed_ticks_per_second,
+    .mode = PIDAutotuner::Mode::ZNModeNoOvershoot,
+    .loop_period_us = update_period_us,
+    .cycles = 50,
+};
+
+/// @brief Настройки регулятора позиции
+const PID::Config position_config = {
     .kp = 8.4882631302,
     .ki = 0.0355594568,
     .kd = 1337.7160644531,
-    .max_out = 150,
-    .max_i = 150,
+    .max_out = max_speed_ticks_per_second,
+    .max_i = max_speed_ticks_per_second,
 };
 
-ServoMotor::Config servo_config = {
-    .update_period_seconds = 400 * 1e-6,
+const ServoMotor::Config servo_config = {
+    .update_period_seconds = update_period_us * 1e-6,
     .ready_max_abs_error = 1,
-    .max_speed = 150,
 };
 
 auto left_servo = ServoMotor(
@@ -46,155 +66,93 @@ auto left_servo = ServoMotor(
     speed_config,
     position_config,
     MotorDriverL293(vart::Pins::left_driver_a, vart::Pins::left_driver_b),
-    Encoder(vart::Pins::left_encoder_a, vart::Pins::left_encoder_b)
-);
+    Encoder(vart::Pins::left_encoder_a, vart::Pins::left_encoder_b));
 
+#define logMsg(msg) Serial.print(msg)
 
-#define log(x) Serial.print(#x " = "); Serial.println(x, 10)
+#define logFloat(x)   \
+  logMsg(#x " = "); \
+  Serial.println(x, 10)
 
+#define logPid(pid)      \
+  logMsg(#pid "\n");     \
+  logFloat(pid.kp);      \
+  logFloat(pid.ki);      \
+  logFloat(pid.kd);      \
+  logFloat(pid.max_out); \
+  logFloat(pid.max_i)
 
-void tunePosition(float target_position, int32_t loop_period_us) {
-    const auto max_speed = 150;
-    uint32_t next_update_us;
+void tunePosition(ServoMotor &servo_motor, float target_position, float speed_limit) {
+    servo_motor.setSpeedLimit(speed_limit);
 
-    auto tuner = PIDAutotuner();
+    auto getInput = [&servo_motor]() -> float {
+        servo_motor.update();
+        return servo_motor.getCurrentSpeed();
+    };
 
-    log(target_position);
+    auto setOutput = [&servo_motor](float new_target) {
+        servo_motor.setTargetPosition(int32_t(new_target));
+    };
 
-    tuner.setTargetInputValue(target_position);
-    tuner.setLoopInterval(loop_period_us);
-    tuner.setOutputRange(-max_speed, max_speed);
-    tuner.setZNMode(PIDAutotuner::ZNModeNoOvershoot);
-//    tuner.setTuningCycles(1000);
-
-    tuner.startTuningLoop(micros());
-
-    while (!tuner.isFinished()) {
-        auto input = float(left_servo.encoder.getPosition());
-
-        float output = tuner.tunePID(input, micros());
-        left_servo.setSpeedLimit(output);
-        left_servo.update();
-
-        next_update_us = micros() + loop_period_us;
-        while (micros() < next_update_us) { delayMicroseconds(1); }
-    }
-
-    left_servo.driver.setPower(0);
-
-    log(tuner.getKp());
-    log(tuner.getKi());
-    log(tuner.getKd());
-
-    delay(100);
+    auto position_pid = position_pid_tuner.tune(target_position, getInput, setOutput);
+    logPid(position_pid);
 }
 
-void tuneSpeed(float target_input_value) {
-    const auto loop_period_us = 400;
+void tuneSpeed(ServoMotor &servo_motor, float target_speed) {
+    const Encoder &encoder = servo_motor.getEncoder();
+    const auto dt = servo_motor.getUpdatePeriodSeconds();
 
-    auto tuner = PIDAutotuner();
+    auto getInput = [&encoder, dt]() -> float {
+        return encoder.calcSpeed(dt);
+    };
 
-    uint32_t next_update_us;
+    const MotorDriverL293 &driver = servo_motor.getDriver();
 
-    log(target_input_value);
+    auto setOutput = [&driver](float pwm_dir_set) {
+        driver.setPower(int32_t(pwm_dir_set));
+    };
 
-    tuner.setTargetInputValue(target_input_value);
-    tuner.setLoopInterval(loop_period_us);
-    tuner.setOutputRange(-255, 255);
-    tuner.setZNMode(PIDAutotuner::ZNModeBasicPID);
-    tuner.setTuningCycles(1000);
 
-    tuner.startTuningLoop(micros());
+    auto speed_pid = speed_pid_tuner.tune(target_speed, getInput, setOutput);
 
-    uint32_t last = micros();
 
-    while (!tuner.isFinished()) {
-        float dt = float(micros() - last) * 1e-6F;
-
-        auto input = left_servo.encoder.calcSpeed(dt);
-        last = micros();
-
-        double output = tuner.tunePID(input, micros());
-        left_servo.driver.setPower(int32_t(output));
-
-        next_update_us = micros() + loop_period_us;
-        while (micros() < next_update_us) { delayMicroseconds(1); }
-    }
-
-    left_servo.driver.setPower(0);
-
-    log(tuner.getKp());
-    log(tuner.getKi());
-    log(tuner.getKd());
-
-    delay(100);
+    logPid(speed_pid);
 }
 
-void goTimeReg(float target_speed) {
-    const auto update_period = 400;
+void goToPosition(int32_t position, float speed) {
+    const auto update_period = left_servo.getUpdatePeriodUs();
 
-    log(target_speed);
-    left_servo.setSpeedLimit(target_speed);
+    logMsg("\ngoToPosition\n");
+    logFloat(position);
+    logFloat(speed);
 
-    uint32_t end_time = millis() + 5000;
-    while (millis() < end_time) {
+    left_servo.enable();
+
+    left_servo.setTargetPosition(position);
+    left_servo.setSpeedLimit(speed);
+
+    while (not left_servo.isReady()) {
         left_servo.update();
         delayMicroseconds(update_period);
     }
 
-    left_servo.driver.setPower(0);
-}
+    logMsg(left_servo.getCurrentPosition());
+    logMsg("Done\n\n");
 
-void goDist(int32_t target) {
-    while (not left_servo.isReady()) {
-
-    }
-}
-
-float calcSpeed(int pwm) {
-    const uint32_t period_ms = 50;
-    const float period_seconds = period_ms * 0.001;
-
-    const uint32_t run_time_ms = 10000;
-    const float iterations = float(run_time_ms) / period_ms;
-
-    uint32_t end_time = millis() + run_time_ms;
-
-    float sum = 0;
-
-    left_servo.driver.setPower(pwm);
-    /// MAX SPEED = 1894
-    while (millis() < end_time) {
-        delay(period_ms);
-        const float speed = left_servo.encoder.calcSpeed(period_seconds);
-        sum += speed;
-        log(speed);
-    }
-
-    left_servo.driver.setPower(0);
-
-    float result_speed = sum / iterations;
-
-    return result_speed;
+    left_servo.disable();
 }
 
 void setup() {
-    left_servo.encoder.enable();
     analogWriteFrequency(30000);
     Serial.begin(9600);
+    left_servo.enable();
 
-    delay(1000);
+    delay(2000);
 
-    const auto loop_period_us = 128;
 
-    for (int target = 0, delta = 1; delta < 200; delta += 40, target += delta) {
-        log(delta);
-        tunePosition(float(target), loop_period_us);
-    }
+    left_servo.disable();
 
-    left_servo.encoder.disable();
 }
-
 
 void loop() {}
 
