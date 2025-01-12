@@ -1,21 +1,23 @@
 #pragma once
 
 #include <Arduino.h>
+#include <cstdint>
 
-#include <utility>
+
 #include "hardware/Encoder.hpp"
 #include "hardware/MotorDriver.hpp"
-#include "hardware/PID.hpp"
+#include "pid/Regulator.hpp"
 
 
-namespace hardware {
+namespace pid {
 
     /// Сервомотор (Мотор + Обратная связь по энкодеру)
     class ServoMotor {
 
     public:
-        /// Параметры сервопривода
-        struct Config {
+
+        /// Настройки сервопривода
+        struct Settings {
             /// Период обновления регулятора в секундах
             const float update_period_seconds;
 
@@ -23,24 +25,28 @@ namespace hardware {
             const uint8_t ready_max_abs_error;
 
             /// Параметры регулятора скорости
-            const PID::Config speed_config;
+            RegulatorSettings speed;
 
             /// Параметры регулятора позиции
-            const PID::Config position_config;
+            RegulatorSettings position;
         };
+
+        /// Настройки
+        const Settings &settings;
+
     private:
 
+        /// Драйвер
         const MotorDriverL293 driver;
+
+        /// Энкодер
         Encoder encoder;
 
         /// Регулятор шим по скорости
-        PID speed_pid;
-
-        /// Конфигурация сервопривода
-        const Config &config;
+        Regulator speed_regulator;
 
         /// Регулятор скорости по положению
-        PID position_pid;
+        Regulator position_regulator;
 
         /// Ограничение скорости
         float abs_speed_limit{0};
@@ -55,18 +61,15 @@ namespace hardware {
         bool is_enabled{false};
 
     public:
-        explicit ServoMotor(
-            const Config &config,
-            const MotorDriverL293 &driver,
-            const Encoder &encoder
-        )
-            :
+
+        explicit ServoMotor(Settings &settings, const MotorDriverL293 &driver, const Encoder &encoder) :
+            settings(settings),
             driver(driver),
             encoder(encoder),
-            speed_pid(config.speed_config),
-            position_pid(config.position_config),
-            config(config) {}
+            speed_regulator(settings.speed),
+            position_regulator(settings.position) {}
 
+        /// Отключить сервопривод
         void disable() {
             encoder.disable();
             driver.setPower(0);
@@ -74,6 +77,7 @@ namespace hardware {
             is_enabled = false;
         }
 
+        /// Включить сервопривод
         void enable() {
             encoder.enable();
             is_enabled = true;
@@ -86,13 +90,6 @@ namespace hardware {
             } else {
                 disable();
             }
-        }
-
-        /// Обновить регулятор
-        void update() {
-            if (not is_enabled) { return; }
-
-            driver.setPower(int32_t(speed_pid.calc(calcSpeedError(calcSpeedU()), config.update_period_seconds)));
         }
 
         /// Установить новую целевую позицию
@@ -112,7 +109,7 @@ namespace hardware {
 
         /// Установить ограничение скорости
         void setSpeedLimit(float speed) {
-            abs_speed_limit = constrain(speed, 0, position_pid.config.max_out);
+            abs_speed_limit = constrain(speed, 0, position_regulator.settings.abs_max_out);
         }
 
         /// Получить текущую скорость
@@ -122,7 +119,7 @@ namespace hardware {
 
         /// Достиг ли позиции?
         bool isReady() const {
-            return abs(calcPositionError()) < config.ready_max_abs_error;
+            return abs(calcPositionError()) < settings.ready_max_abs_error;
         }
 
         /// Получить период обновления регулятора в микросекундах
@@ -132,21 +129,55 @@ namespace hardware {
 
         /// Получить период обновления регулятора в секундах
         float getUpdatePeriodSeconds() const {
-            return config.update_period_seconds;
+            return settings.update_period_seconds;
         }
 
-        /// Получить управляемый драйвер
-        const MotorDriverL293 &getDriver() const { return driver; }
+        /// Автоматически настроить регулятор скорости
+        void tuneSpeedRegulator(float target_speed) {
+            const auto dt = getUpdatePeriodSeconds();
 
-        /// Получить управляемый энкодер
-        const Encoder &getEncoder() const { return encoder; }
+            const auto getInput = [this, dt]() -> float {
+                return this->encoder.calcSpeed(dt);
+            };
 
+            const auto setOutput = [this](float power) -> void {
+                this->driver.setPower(int32_t(power));
+            };
+
+            speed_regulator.tune(target_speed, getUpdatePeriodUs(), getInput, setOutput);
+        }
+
+        void tunePositionRegulator(int32_t target_position) {
+            const auto getInput = [this]() -> float {
+                return float(this->getCurrentPosition());
+            };
+
+            const auto setOutput = [this](float speed) -> void {
+                this->setDriverPowerBySpeed(speed);
+            };
+
+            speed_regulator.tune(float(target_position), getUpdatePeriodUs(), getInput, setOutput);
+        }
+
+        /// Обновить регулятор
+        void update() {
+            if (not is_enabled) { return; }
+            setDriverPowerBySpeed(calcSpeedU());
+        }
+
+
+        /// Установить мощность на драйвер по заданной скорости
+        void setDriverPowerBySpeed(float speed) {
+            const float speed_error = calcSpeedError(speed);
+            const int32_t &power = int32_t(speed_regulator.calc(speed_error, getUpdatePeriodSeconds()));
+            driver.setPower(power);
+        }
 
     private:
 
         /// Расчитать и ограничить управляющую скорость
         float calcSpeedU() {
-            const double speed_u = position_pid.calc(calcPositionError(), config.update_period_seconds);
+            const double speed_u = position_regulator.calc(calcPositionError(), getUpdatePeriodSeconds());
             return constrain(speed_u, -abs_speed_limit, abs_speed_limit);
         }
 
@@ -155,15 +186,10 @@ namespace hardware {
             return target_position_ticks - getCurrentPosition();
         }
 
-        /// Обновить рассчитанную скорость
-        float updateCalculatedSpeed() {
-            calculated_speed = encoder.calcSpeed(config.update_period_seconds);
-            return calculated_speed;
-        }
-
         /// Расчитать ошибку позиционирования
         float calcSpeedError(float target_speed) {
-            return target_speed - updateCalculatedSpeed();
+            calculated_speed = encoder.calcSpeed(getUpdatePeriodSeconds());
+            return target_speed - calculated_speed;
         }
     };
-}  // namespace hardware
+}  // namespace pid

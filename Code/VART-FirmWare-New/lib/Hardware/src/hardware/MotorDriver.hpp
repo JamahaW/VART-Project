@@ -3,7 +3,7 @@
 #include <cstdint>
 
 
-namespace hardware {
+namespace pid {
 
     class MotorDriverL293 {
     private:

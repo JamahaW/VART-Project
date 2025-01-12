@@ -1,17 +1,17 @@
 #include <hardware/ServoController.hpp>
 
 
-hardware::ServoController::ServoController(uint8_t pin) : pin{pin} {
+pid::ServoController::ServoController(uint8_t pin) : pin{pin} {
 }
 
-void hardware::ServoController::enable() const {
+void pid::ServoController::enable() const {
     servo.attach(pin);
 }
 
-void hardware::ServoController::disable() const {
+void pid::ServoController::disable() const {
     servo.detach();
 }
 
-void hardware::ServoController::setPosition(uint8_t angle) const {
+void pid::ServoController::setPosition(uint8_t angle) const {
     servo.write(angle);
 }

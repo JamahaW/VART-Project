@@ -3,7 +3,7 @@
 #include <cstdint>
 
 
-namespace hardware {
+namespace pid {
 
     /// Инкрементальный энкодер
     class Encoder {

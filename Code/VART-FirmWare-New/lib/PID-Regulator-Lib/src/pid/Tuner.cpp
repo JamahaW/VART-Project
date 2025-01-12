@@ -1,40 +1,40 @@
-// PID automated tuning (Ziegler-Nichols/relay method) for Arduino and compatible boards
+// PidSettings automated tuning (Ziegler-Nichols/relay method) for Arduino and compatible boards
 // Copyright (c) 2016-2020 jackw01
 // This code is distrubuted under the MIT License, see LICENSE for details
 
-#include "pidautotuner.h"
+#include "Tuner.hpp"
 
 
-PIDAutotuner::PIDAutotuner() {}
+pid::Tuner::Tuner() = default;
 
 /// Set target input for tuning
-void PIDAutotuner::setTargetInputValue(float target) {
+void pid::Tuner::setTargetInputValue(float target) {
     targetInputValue = target;
 }
 
 /// Set loop interval
-void PIDAutotuner::setLoopInterval(long interval) {
+void pid::Tuner::setLoopInterval(long interval) {
     loopInterval = float(interval);
 }
 
 /// Set output range
-void PIDAutotuner::setOutputRange(float min_output, float max_output) {
+void pid::Tuner::setOutputRange(float min_output, float max_output) {
     minOutput = min_output;
     maxOutput = max_output;
 }
 
 /// Set Ziegler-Nichols tuning mode
-void PIDAutotuner::setZNMode(Mode zn) {
-    znMode = zn;
+void pid::Tuner::setZNMode(TunerMode mode) {
+    znMode = mode;
 }
 
-/// Set tuning cycles
-void PIDAutotuner::setTuningCycles(int tuneCycles) {
-    cycles = tuneCycles;
+/// Set tuning new_cycles
+void pid::Tuner::setTuningCycles(int new_cycles) {
+    this->cycles = new_cycles;
 }
 
 /// Initialize all variables before loop
-void PIDAutotuner::startTuningLoop(unsigned long us) {
+void pid::Tuner::startTuningLoop(unsigned long us) {
     i = 0; // Cycle counter
     output = true; // Current output state
     outputValue = maxOutput;
@@ -46,7 +46,7 @@ void PIDAutotuner::startTuningLoop(unsigned long us) {
 }
 
 /// Run one cycle of the loop
-float PIDAutotuner::tunePID(float input, unsigned long us) {
+float pid::Tuner::tunePID(float input, unsigned long us) {
     // Useful information on the algorithm used (Ziegler-Nichols method/Relay method)
     // http://www.processcontrolstuff.net/wp-content/uploads/2015/02/relay_autot-2.pdf
     // https://en.wikipedia.org/wiki/Ziegler%E2%80%93Nichols_method
@@ -94,14 +94,14 @@ float PIDAutotuner::tunePID(float input, unsigned long us) {
         // Calculate Ku (ultimate gain)
         // Formula given is Ku = 4d / πa
         // d is the amplitude of the output signal
-        // a is the amplitude of the input signal
-        float ku = (4.0 * ((maxOutput - minOutput) / 2.0)) / (M_PI * (max - min) / 2.0);
+        // A is the amplitude of the input signal
+        float ku = (4.0 * ((maxOutput - minOutput) / 2.0)) / (m_pi * (max - min) / 2.0);
 
         // Calculate Tu (period of output oscillations)
         auto tu = float(tLow + tHigh);
 
         // How gains are calculated
-        // PID control algorithm needs Kp, Ki, and Kd
+        // PidSettings control algorithm needs Kp, Ki, and Kd
         // Ziegler-Nichols tuning method gives Kp, Ti, and Td
         //
         // Kp = 0.6Ku = Kc
@@ -118,11 +118,11 @@ float PIDAutotuner::tunePID(float input, unsigned long us) {
         // https://en.wikipedia.org/wiki/Ziegler%E2%80%93Nichols_method
 
         float kpConstant, tiConstant, tdConstant;
-        if (znMode == ZNModeBasicPID) {
+        if (znMode == basic) {
             kpConstant = 0.6;
             tiConstant = 0.5;
             tdConstant = 0.125;
-        } else if (znMode == ZNModeLessOvershoot) {
+        } else if (znMode == less_overshoot) {
             kpConstant = 0.33;
             tiConstant = 0.5;
             tdConstant = 0.33;
@@ -155,7 +155,7 @@ float PIDAutotuner::tunePID(float input, unsigned long us) {
     if (i >= cycles) {
         output = false;
         outputValue = minOutput;
-        auto i_1 = float(i - 1);
+        auto i_1 = float(i - 2);
         kp = p_average / i_1;
         ki = i_average / i_1;
         kd = d_average / i_1;
@@ -164,19 +164,19 @@ float PIDAutotuner::tunePID(float input, unsigned long us) {
     return outputValue;
 }
 
-/// Get PID constants after tuning
-float PIDAutotuner::getKp() const { return kp; };
+/// Get PidSettings constants after tuning
+float pid::Tuner::getKp() const { return kp; }
 
-float PIDAutotuner::getKi() const { return ki; };
+float pid::Tuner::getKi() const { return ki; }
 
-float PIDAutotuner::getKd() const { return kd; };
+float pid::Tuner::getKd() const { return kd; }
 
 /// Is the tuning loop finished?
-bool PIDAutotuner::isFinished() const {
+bool pid::Tuner::isFinished() const {
     return (i >= cycles);
 }
 
 /// return number of tuning cycle
-int PIDAutotuner::getCycle() const {
+int pid::Tuner::getCycle() const {
     return i;
 }

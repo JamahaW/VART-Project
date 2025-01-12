@@ -3,13 +3,14 @@
 #include "vart/Pins.hpp"
 #include "hardware/MotorDriver.hpp"
 #include "hardware/Encoder.hpp"
-#include <pidautotuner.h>
+#include "../../lib/PID-Regulator-Lib/src/pid/Tuner.hpp"
+#include "Tuner.hpp"
 
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 
-using namespace hardware;
+using namespace pid;
 
 auto driver = MotorDriverL293(vart::left_driver_a, vart::left_driver_b);
 
@@ -22,7 +23,7 @@ auto encoder = Encoder(vart::Pins::left_encoder_a, vart::Pins::left_encoder_b);
 void tuneSpeed(float target_input_value) {
     const auto loopInterval = 1000;
 
-    auto tuner = PIDAutotuner();
+    auto tuner = Tuner();
 
     uint32_t next_update_us;
 
@@ -32,7 +33,7 @@ void tuneSpeed(float target_input_value) {
     tuner.setTargetInputValue(target_input_value);
     tuner.setLoopInterval(loopInterval);
     tuner.setOutputRange(-255, 255);
-    tuner.setZNMode(PIDAutotuner::ZNModeLessOvershoot);
+    tuner.setZNMode(Tuner::ZNModeLessOvershoot);
 
     tuner.startTuningLoop(micros());
     while (!tuner.isFinished()) {

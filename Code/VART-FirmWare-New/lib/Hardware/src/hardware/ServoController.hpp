@@ -5,7 +5,7 @@
 #include "ESP32Servo.h"
 
 
-namespace hardware {
+namespace pid {
     class ServoController {
         mutable Servo servo;
         const uint8_t pin;
@@ -19,4 +19,4 @@ namespace hardware {
 
         void setPosition(uint8_t angle) const;
     };
-} // namespace hardware
+} // namespace pid

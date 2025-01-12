@@ -4,8 +4,8 @@
 #include "vart/Pins.hpp"
 
 
-const auto left_encoder = hardware::Encoder(vart::Pins::left_encoder_a, vart::Pins::left_encoder_b);
-const auto right_encoder = hardware::Encoder(vart::Pins::right_encoder_a, vart::Pins::right_encoder_b);
+const auto left_encoder = pid::Encoder(vart::Pins::left_encoder_a, vart::Pins::left_encoder_b);
+const auto right_encoder = pid::Encoder(vart::Pins::right_encoder_a, vart::Pins::right_encoder_b);
 
 
 void setup() {
