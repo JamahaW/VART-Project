@@ -7,62 +7,10 @@
 #include "hardware/Encoder.hpp"
 #include "hardware/MotorDriver.hpp"
 #include "pid/Regulator.hpp"
+#include "pid/DeltaRegulator.hpp"
 
 
-namespace pid {
-
-    struct DeltaPositionRegulatorSettings {
-
-        /// Настройки этого регулятора
-        RegulatorSettings regulator;
-
-        /// Период обновления целевой позиции в секундах
-        const float update_period_seconds;
-    };
-
-    /// Регулятор положения
-    class DeltaPositionRegulator {
-
-    private:
-        const DeltaPositionRegulatorSettings &settings;
-
-        /// Сам регулятор
-        Regulator regulator;
-
-        /// Период обновления целевой позиции в миллисекундах
-        const uint32_t update_period_ms;
-
-        /// Момент обновления целевой позиции в миллисекундах
-        uint32_t next_update_time_ms{0};
-
-    public:
-
-        /// Следующая целевая позиция смещения
-        double target{0.0};
-
-        explicit DeltaPositionRegulator(DeltaPositionRegulatorSettings &settings) :
-            settings(settings), regulator(settings.regulator),
-            update_period_ms(uint32_t(settings.update_period_seconds * 1e3)) {}
-
-        const PidSettings &tune(
-            int32_t target_position,
-            const std::function<float()> &getInput,
-            const std::function<void(float)> &setOutput,
-            uint32_t loop_period_us
-        ) {
-            regulator.tune(float(target_position), loop_period_us, getInput, setOutput);
-            return settings.regulator.pid;
-        }
-
-        int32_t calc(double input, float speed, float period_seconds) {
-            if (millis() > next_update_time_ms) {
-                next_update_time_ms = millis() + update_period_ms;
-                target += speed * settings.update_period_seconds;
-            }
-
-            return int32_t(regulator.calc(target - input, period_seconds));
-        }
-    };
+namespace hardware {
 
     /// Сервомотор (Мотор + Обратная связь по энкодеру)
     class ServoMotor {
@@ -78,17 +26,17 @@ namespace pid {
             const uint8_t ready_max_abs_error;
 
             /// Параметры регулятора скорости
-            DeltaPositionRegulatorSettings delta_position;
+            pid::DeltaRegulatorSettings delta_position;
 
             /// Параметры регулятора позиции
-            RegulatorSettings position;
+            pid::RegulatorSettings position;
         };
 
         /// Настройки
-        const Settings &settings;
+        Settings &settings;
 
         /// Регулятор шим по удержанию позиции смещения
-        DeltaPositionRegulator delta_position_regulator;
+        pid::DeltaRegulator delta_position_regulator{settings.delta_position};
 
     private:
 
@@ -99,7 +47,7 @@ namespace pid {
         const MotorDriverL293 driver;
 
         /// Регулятор скорости по положению
-        Regulator position_regulator;
+        pid::Regulator position_regulator;
 
         /// Ограничение скорости
         float abs_speed_limit{0};
@@ -116,7 +64,6 @@ namespace pid {
         explicit ServoMotor(Settings &settings, const MotorDriverL293 &driver, const Encoder &encoder) :
             settings(settings),
             encoder(encoder), driver(driver),
-            delta_position_regulator(settings.delta_position),
             position_regulator(settings.position) {}
 
         /// Отключить сервопривод
@@ -177,7 +124,7 @@ namespace pid {
         }
 
         /// Автоматически настроить регулятор ШИМ по смещению положения
-        const PidSettings &tuneDeltaPositionRegulator(int32_t target_position) {
+        const pid::PidSettings &tuneDeltaPositionRegulator(int32_t target_position) {
             const auto getInput = [this]() -> float {
                 return float(this->getCurrentPosition());
             };
@@ -189,7 +136,7 @@ namespace pid {
             return delta_position_regulator.tune(target_position, getInput, setOutput, getUpdatePeriodUs());
         }
 
-        const PidSettings &tunePositionRegulator(int32_t target_position) {
+        const pid::PidSettings &tunePositionRegulator(int32_t target_position) {
             const auto getInput = [this]() -> float {
                 return float(this->getCurrentPosition());
             };

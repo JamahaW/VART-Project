@@ -11,7 +11,7 @@
 #pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 
 using namespace pid;
-
+using namespace hardware;
 
 ServoMotor::Settings servo_config = {
     .update_period_seconds = 128 * 1e-6,
@@ -103,7 +103,7 @@ void goSpeedReg(ServoMotor &motor, float speed) {
     logMsg("\ngoSpeed\n");
     logFloat(speed);
 
-    uint32_t end_time_ms = millis() + 6000;
+    uint32_t end_time_ms = millis() + 4000;
 
     motor.beginMove();
 

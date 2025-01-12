@@ -5,13 +5,10 @@
 #include "ESP32Servo.h"
 
 
-namespace pid {
-    class ServoController {
+namespace hardware {
+    struct ServoController {
         mutable Servo servo;
         const uint8_t pin;
-
-    public:
-        explicit ServoController(uint8_t pin);
 
         void enable() const;
 
