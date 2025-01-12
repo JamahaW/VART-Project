@@ -22,13 +22,12 @@ namespace vart {
             double ticksTomm(int32_t ticks) const { return double(ticks) / ticks_in_mm; }
         };
 
+        /// Сервопривод
+        hardware::ServoMotor &servo;
     private:
 
         /// Настройки привода
         const Settings &settings;
-
-        /// Сервопривод
-        hardware::ServoMotor &servo;
 
     public:
 

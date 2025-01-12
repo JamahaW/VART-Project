@@ -95,6 +95,7 @@ namespace pid {
 
             while (not tuner.isFinished()) {
                 if (millis() > end_time_ms) {
+                    Serial.println("TIMEOUT");
                     break;
                 }
 

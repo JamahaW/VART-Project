@@ -30,6 +30,9 @@ void waitToMove(const vart::Pulley &pulley) {
 }
 
 [[noreturn]] void pulleysTask(void *) {
+    analogWriteFrequency(30000);
+//    const uint32_t us = vart::left_pulley.getUpdatePeriodUs();
+
     while (true) {
         vart::left_pulley.update();
         vart::right_pulley.update();
@@ -53,22 +56,14 @@ void test_pulley(vart::Pulley &pulley) {
     pulley.setEnabled(false);
 }
 
+#define makeTask(fn, stack_size) do {                                                       \
+    static StackType_t stack[stack_size];                                                   \
+    static StaticTask_t task_data;                                                          \
+    xTaskCreateStaticPinnedToCore(fn, #fn, stack_size, nullptr, 10, stack, &task_data, 1);  \
+} while(false)
+
 void setup() {
-    analogWriteFrequency(30000);
-
-    static StackType_t stack[4096];
-    static StaticTask_t task_data;
-
-    xTaskCreateStaticPinnedToCore(
-        pulleysTask,
-        "pulleys",
-        4096,
-        nullptr,
-        5,
-        stack,
-        &task_data,
-        1
-    );
+    makeTask(pulleysTask, 4096);
 
     Serial.begin(115200);
 

@@ -41,6 +41,15 @@ namespace pid {
             settings(settings), regulator(settings.regulator),
             update_period_ms(uint32_t(settings.update_period_seconds * 1e3)) {}
 
+        int32_t calc(double input, float speed, float period_seconds) {
+            if (millis() > next_update_time_ms) {
+                next_update_time_ms = millis() + update_period_ms;
+                target += speed * settings.update_period_seconds;
+            }
+
+            return int32_t(regulator.calc(target - input, period_seconds));
+        }
+
         const PidSettings &tune(
             int32_t target_position,
             const std::function<float()> &getInput,
@@ -49,15 +58,6 @@ namespace pid {
         ) {
             regulator.tune(float(target_position), loop_period_us, getInput, setOutput);
             return settings.regulator.pid;
-        }
-
-        int32_t calc(double input, float speed, float period_seconds) {
-            if (millis() > next_update_time_ms) {
-                next_update_time_ms = millis() + update_period_ms;
-                target += speed * settings.update_period_seconds;
-            }
-
-            return int32_t(regulator.calc(target - input, period_seconds));
         }
     };
 }

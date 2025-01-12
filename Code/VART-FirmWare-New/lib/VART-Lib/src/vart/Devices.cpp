@@ -16,7 +16,7 @@ static ServoMotor::Settings servo_settings = {
             .pid = {
                 .kp = 16.1296730042,
                 .ki = 0.0492058247,
-                .kd = 2244.5698242188,
+                .kd = 1000,//2244.5698242188,
                 .abs_max_i = 204
             },
             .tuner = {

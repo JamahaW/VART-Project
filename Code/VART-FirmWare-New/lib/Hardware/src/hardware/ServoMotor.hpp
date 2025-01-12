@@ -126,6 +126,8 @@ namespace hardware {
 
         /// Автоматически настроить регулятор ШИМ по смещению положения
         const pid::PidSettings &tuneDeltaPositionRegulator(int32_t target_position) {
+            enable();
+
             const auto getInput = [this]() -> float {
                 return float(this->getCurrentPosition());
             };
@@ -134,7 +136,11 @@ namespace hardware {
                 this->driver.setPower(int32_t(power));
             };
 
-            return delta_position_regulator.tune(target_position, getInput, setOutput, getUpdatePeriodUs());
+            const pid::PidSettings &ret = delta_position_regulator.tune(target_position, getInput, setOutput, getUpdatePeriodUs());
+
+            disable();
+
+            return ret;
         }
 
         const pid::PidSettings &tunePositionRegulator(int32_t target_position) {
