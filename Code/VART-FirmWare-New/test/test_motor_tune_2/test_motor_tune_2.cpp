@@ -15,22 +15,20 @@ using namespace pid;
 
 ServoMotor::Settings servo_config = {
     .update_period_seconds = 128 * 1e-6,
+    .delta_regulator_update_period_seconds = 0.010,
     .ready_max_abs_error = 5,
     .delta_position = {
-        .regulator = {
-            .pid = {
-                .kp = 16.1296730042,
-                .ki = 0.0492058247,
-                .kd = 2244.5698242188,
-                .abs_max_i = 204
-            },
-            .tuner = {
-                .mode = pid::TunerMode::no_overshoot,
-                .cycles = 20,
-            },
-            .abs_max_out = 255
+        .pid = {
+            .kp = 16.1296730042,
+            .ki = 0.0492058247,
+            .kd = 2244.5698242188,
+            .abs_max_i = 204
         },
-        .update_period_seconds = 0.010,
+        .tuner = {
+            .mode = pid::TunerMode::no_overshoot,
+            .cycles = 20,
+        },
+        .abs_max_out = 255
     },
     .position = {
         .pid = {
@@ -97,41 +95,41 @@ void goToPosition(int32_t position, float speed) {
     logMsg("Done\n\n");
 }
 
-//void goSpeed(ServoMotor &motor, float speed) {
-//    const auto update_period = motor.getUpdatePeriodUs();
-//
-//    logMsg("\ngoSpeed\n");
-//    logFloat(speed);
-//
-//    uint32_t end_time_ms = millis() + 6000;
-//
-//    const float dt = motor.getUpdatePeriodSeconds();
-//    const double position_update_period_seconds = 0.010;
-//    const auto pos_update_period_ms = uint32_t(position_update_period_seconds * 1e3);
-//    const double delta = speed * position_update_period_seconds;
-//
-//    double target = motor.getCurrentPosition();
-//
-//    uint32_t next = millis() + pos_update_period_ms;
-//
-//    while (millis() < end_time_ms) {
-//        const int32_t current_position = motor.getCurrentPosition();
-//        const double error = target - current_position;
-//
-//        if (millis() > next) {
-//            next = millis() + pos_update_period_ms;
-//            target += delta;
-//        }
-//
-////        motor.driver.setPower(int32_t(motor.delta_position_regulator.calc(error, 0, dt)));
-//
-//        delayMicroseconds(update_period);
-//    }
-//
-//    Serial.printf("%f\t%d\n", target, motor.getCurrentPosition());
-//
-//    logMsg("Done\n\n");
-//}
+void goSpeed(ServoMotor &motor, float speed) {
+    const auto update_period = motor.getUpdatePeriodUs();
+
+    logMsg("\ngoSpeed\n");
+    logFloat(speed);
+
+    uint32_t end_time_ms = millis() + 6000;
+
+    const float dt = motor.getUpdatePeriodSeconds();
+    const double position_update_period_seconds = 0.010;
+    const auto pos_update_period_ms = uint32_t(position_update_period_seconds * 1e3);
+    const double delta = speed * position_update_period_seconds;
+
+    double target = motor.getCurrentPosition();
+
+    uint32_t next = millis() + pos_update_period_ms;
+
+    while (millis() < end_time_ms) {
+        const int32_t current_position = motor.getCurrentPosition();
+        const double error = target - current_position;
+
+        if (millis() > next) {
+            next = millis() + pos_update_period_ms;
+            target += delta;
+        }
+
+        motor.driver.setPower(int32_t(motor.delta_position_regulator.calc(error, 0, dt)));
+
+        delayMicroseconds(update_period);
+    }
+
+    Serial.printf("%f\t%d\n", target, motor.getCurrentPosition());
+
+    logMsg("Done\n\n");
+}
 
 void goSpeedReg(ServoMotor &motor, float speed) {
     const auto update_period = motor.getUpdatePeriodUs();
@@ -141,42 +139,44 @@ void goSpeedReg(ServoMotor &motor, float speed) {
 
     uint32_t end_time_ms = millis() + 6000;
 
-    motor.beginMove();
+    motor.delta_position_regulator_target = motor.getCurrentPosition();
 
     while (millis() < end_time_ms) {
         motor.setDriverPowerBySpeed(speed);
         delayMicroseconds(update_period);
     }
 
+    Serial.printf("%f\t%d\n", motor.delta_position_regulator_target, motor.getCurrentPosition());
+
     logMsg("Done\n\n");
 }
 
-//void testSpeed(ServoMotor &motor) {
-////    motor.driver.setPower(255);
-//
-//    uint32_t end_time_ms = millis() + 6000;
-//
-//    const double position_update_period_seconds = 0.010;
-//    const auto pos_update_period_ms = uint32_t(position_update_period_seconds * 1e3);
-//
-//    uint32_t current_position, last_position = 0, i = 1;
-//    double avg_speed = 0;
-//
-//    while (millis() < end_time_ms) {
-//        current_position = motor.getCurrentPosition();
-//
-//        avg_speed += double(current_position - last_position);
-//
-//        last_position = current_position;
-//
-//        i++;
-//        delay(pos_update_period_ms);
-//    }
-//
-//    avg_speed /= i;
-//
-//    logFloat(avg_speed);
-//}
+void testSpeed(ServoMotor &motor) {
+    motor.driver.setPower(255);
+
+    uint32_t end_time_ms = millis() + 6000;
+
+    const double position_update_period_seconds = 0.010;
+    const auto pos_update_period_ms = uint32_t(position_update_period_seconds * 1e3);
+
+    uint32_t current_position, last_position = 0, i = 1;
+    double avg_speed = 0;
+
+    while (millis() < end_time_ms) {
+        current_position = motor.getCurrentPosition();
+
+        avg_speed += double(current_position - last_position);
+
+        last_position = current_position;
+
+        i++;
+        delay(pos_update_period_ms);
+    }
+
+    avg_speed /= i;
+
+    logFloat(avg_speed);
+}
 
 void setup() {
     analogWriteFrequency(30000);

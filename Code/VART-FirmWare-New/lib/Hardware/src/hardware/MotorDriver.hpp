@@ -14,6 +14,6 @@ namespace pid {
         explicit MotorDriverL293(uint8_t dir_a, uint8_t dir_b);
 
         /// установить ШИМ и направление
-        void setPower(int32_t pwm_dir) const;
+        void setPower(int32_t power) const;
     };
 }

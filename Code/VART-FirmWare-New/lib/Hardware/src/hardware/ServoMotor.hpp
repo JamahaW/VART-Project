@@ -11,6 +11,59 @@
 
 namespace pid {
 
+    struct DeltaPositionRegulatorSettings {
+
+        /// Настройки этого регулятора
+        RegulatorSettings regulator;
+
+        /// Период обновления целевой позиции в секундах
+        const float update_period_seconds;
+    };
+
+    /// Регулятор положения
+    class DeltaPositionRegulator {
+
+    private:
+        const DeltaPositionRegulatorSettings &settings;
+
+        /// Сам регулятор
+        Regulator regulator;
+
+        /// Период обновления целевой позиции в миллисекундах
+        const uint32_t update_period_ms;
+
+        /// Момент обновления целевой позиции в миллисекундах
+        uint32_t next_update_time_ms{0};
+
+    public:
+
+        /// Следующая целевая позиция смещения
+        double target{0.0};
+
+        explicit DeltaPositionRegulator(DeltaPositionRegulatorSettings &settings) :
+            settings(settings), regulator(settings.regulator),
+            update_period_ms(uint32_t(settings.update_period_seconds * 1e3)) {}
+
+        const PidSettings &tune(
+            int32_t target_position,
+            const std::function<float()> &getInput,
+            const std::function<void(float)> &setOutput,
+            uint32_t loop_period_us
+        ) {
+            regulator.tune(float(target_position), loop_period_us, getInput, setOutput);
+            return settings.regulator.pid;
+        }
+
+        int32_t calc(double input, float speed, float period_seconds) {
+            if (millis() > next_update_time_ms) {
+                next_update_time_ms = millis() + update_period_ms;
+                target += speed * settings.update_period_seconds;
+            }
+
+            return int32_t(regulator.calc(target - input, period_seconds));
+        }
+    };
+
     /// Сервомотор (Мотор + Обратная связь по энкодеру)
     class ServoMotor {
 
@@ -21,14 +74,11 @@ namespace pid {
             /// Период обновления регулятора в секундах
             const float update_period_seconds;
 
-            /// Период обновления смещенной целевой позиции в секундах
-            const float delta_regulator_update_period_seconds;
-
             /// Максимальная абсолютная ошибка позиционирования
             const uint8_t ready_max_abs_error;
 
             /// Параметры регулятора скорости
-            RegulatorSettings delta_position;
+            DeltaPositionRegulatorSettings delta_position;
 
             /// Параметры регулятора позиции
             RegulatorSettings position;
@@ -38,18 +88,15 @@ namespace pid {
         const Settings &settings;
 
         /// Регулятор шим по удержанию позиции смещения
-        Regulator delta_position_regulator;
-
-        /// Драйвер
-        const MotorDriverL293 driver;
-
-        /// Следующая целевая позиция смещения
-        double delta_position_regulator_target{0.0};
+        DeltaPositionRegulator delta_position_regulator;
 
     private:
 
         /// Энкодер
         Encoder encoder;
+
+        /// Драйвер
+        const MotorDriverL293 driver;
 
         /// Регулятор скорости по положению
         Regulator position_regulator;
@@ -63,19 +110,14 @@ namespace pid {
         /// Сервопривод включен
         bool is_enabled{false};
 
-        uint32_t delta_position_regulator_next_update_time_ms{0};
-
-        const uint32_t delta_position_regulator_update_period_ms;
 
     public:
 
         explicit ServoMotor(Settings &settings, const MotorDriverL293 &driver, const Encoder &encoder) :
             settings(settings),
-            driver(driver),
-            encoder(encoder),
+            encoder(encoder), driver(driver),
             delta_position_regulator(settings.delta_position),
-            position_regulator(settings.position),
-            delta_position_regulator_update_period_ms(uint32_t(settings.delta_regulator_update_period_seconds * 1e3)) {}
+            position_regulator(settings.position) {}
 
         /// Отключить сервопривод
         void disable() {
@@ -87,7 +129,6 @@ namespace pid {
         /// Включить сервопривод
         void enable() {
             encoder.enable();
-            delta_position_regulator_target = getCurrentPosition();
             is_enabled = true;
         }
 
@@ -145,9 +186,7 @@ namespace pid {
                 this->driver.setPower(int32_t(power));
             };
 
-            delta_position_regulator.tune(float(target_position), getUpdatePeriodUs(), getInput, setOutput);
-
-            return settings.delta_position.pid;
+            return delta_position_regulator.tune(target_position, getInput, setOutput, getUpdatePeriodUs());
         }
 
         const PidSettings &tunePositionRegulator(int32_t target_position) {
@@ -160,8 +199,7 @@ namespace pid {
             };
 
             position_regulator.tune(float(target_position), getUpdatePeriodUs(), getInput, setOutput);
-
-            return settings.position.pid;
+            return position_regulator.settings.pid;
         }
 
         /// Обновить регулятор
@@ -170,19 +208,14 @@ namespace pid {
             setDriverPowerBySpeed(calcSpeedU());
         }
 
+        /// Установить целевое положение регулятора смещения в текущее положение мотора (Вызывать перед началом движения)
+        void beginMove() {
+            delta_position_regulator.target = getCurrentPosition();
+        }
 
         /// Установить мощность на драйвер по заданной скорости
         void setDriverPowerBySpeed(float speed) {
-            const float dt = getUpdatePeriodSeconds();
-
-            if (millis() > delta_position_regulator_next_update_time_ms) {
-                delta_position_regulator_next_update_time_ms = millis() + delta_position_regulator_update_period_ms;
-                delta_position_regulator_target += speed * settings.delta_regulator_update_period_seconds;
-            }
-
-            const double error = delta_position_regulator_target - getCurrentPosition();
-
-            driver.setPower(int32_t(delta_position_regulator.calc(error, dt)));
+            driver.setPower(delta_position_regulator.calc(getCurrentPosition(), speed, getUpdatePeriodSeconds()));
         }
 
     private:

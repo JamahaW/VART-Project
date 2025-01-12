@@ -94,10 +94,8 @@ namespace pid {
             tuner.startTuningLoop(micros());
 
             while (not tuner.isFinished()) {
-
                 if (millis() > end_time_ms) {
-                    Serial.println("Fail: Timeout");
-                    return;
+                    break;
                 }
 
                 next_update_us = micros() + loop_period_us;
