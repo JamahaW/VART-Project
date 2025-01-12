@@ -24,32 +24,13 @@ void goTo(vart::PositionController &controller, int16_t x, int16_t y) {
 } while(false)
 
 void setup() {
-//    makeTask(pulleysTask, 4096);
     analogWriteFrequency(30000);
     Serial.begin(115200);
 
-    delay(5000);
-
-    vart::PositionController &controller = vart::position_controller;
-    controller.setEnabled(true);
-    controller.setCurrentPositionAsHome();
-
-    controller.setSpeedLimit(5);
-    goTo(controller, 0, 100);
-
-    controller.setSpeedLimit(10);
-    goTo(controller, 0, -100);
-
-    controller.setSpeedLimit(32);
-    goTo(controller, 0, 0);
 
     delay(2000);
-
-    controller.setEnabled(false);
 }
 
-void loop() {
-    delay(10);
-}
+void loop() {}
 
 #pragma clang diagnostic pop
