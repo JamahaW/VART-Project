@@ -66,6 +66,10 @@ namespace vart {
             right_pulley.setCurrentRopeLength(right);
         }
 
+        uint32_t getUpdatePeriodUs() const {
+            return left_pulley.getUpdatePeriodUs();
+        }
+
     private:
 
         void calcDistance(double &return_left_rope_length_mm, double &return_right_rope_length_mm, int16_t x, int16_t y) const {

@@ -1,29 +1,20 @@
 #include <Arduino.h>
+#include <cstdint>
 #include "vart/Devices.hpp"
-#include "vart/Macro.hpp"
 
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 
 
-[[noreturn]] void pulleysTask(void *) {
-    analogWriteFrequency(30000);
-//    const uint32_t us = vart::left_pulley.getUpdatePeriodUs();
-
-    while (true) {
-        vart::position_controller.update();
-        delay(1);
-    }
-}
-
-void waitMove(const vart::PositionController &controller) {
-    while (not controller.isReady()) { delay(10); }
-}
-
 void goTo(vart::PositionController &controller, int16_t x, int16_t y) {
     controller.setTargetPosition(x, y);
-    waitMove(controller);
+    const uint32_t us = vart::position_controller.getUpdatePeriodUs();
+
+    while (not controller.isReady()) {
+        vart::position_controller.update();
+        delayMicroseconds(us);
+    }
 }
 
 #define makeTask(fn, stack_size) do {                                                       \
@@ -33,7 +24,8 @@ void goTo(vart::PositionController &controller, int16_t x, int16_t y) {
 } while(false)
 
 void setup() {
-    makeTask(pulleysTask, 4096);
+//    makeTask(pulleysTask, 4096);
+    analogWriteFrequency(30000);
     Serial.begin(115200);
 
     delay(5000);
@@ -52,18 +44,6 @@ void setup() {
     goTo(controller, 0, 0);
 
     delay(2000);
-
-    controller.setSpeedLimit(4);
-    goTo(controller, -100, 0);
-
-    controller.setSpeedLimit(16);
-    goTo(controller, 0, 0);
-
-    controller.setSpeedLimit(4);
-    goTo(controller, 100, 0);
-
-    controller.setSpeedLimit(32);
-    goTo(controller, 0, 0);
 
     controller.setEnabled(false);
 }

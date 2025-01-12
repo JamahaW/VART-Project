@@ -17,7 +17,7 @@ static auto left_driver = MotorDriverL293(Pins::left_driver_a, Pins::left_driver
 static auto right_driver = MotorDriverL293(Pins::right_driver_a, Pins::right_driver_b);
 
 static ServoMotor::Settings servo_settings = {
-    .update_period_seconds = 1000 * 1e-6,
+    .update_period_seconds = 128 * 1e-6,
     .ready_max_abs_error = 5,
     .min_speed_limit = 80,
     .delta_position = {
@@ -25,7 +25,7 @@ static ServoMotor::Settings servo_settings = {
             .pid = {
                 .kp = 16.1296730042,
                 .ki = 0.0492058247,
-                .kd = 1000,//2244.5698242188,
+                .kd = 2244.5698242188,
                 .abs_max_i = 204
             },
             .tuner = {
