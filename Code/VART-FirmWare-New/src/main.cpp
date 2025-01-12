@@ -15,6 +15,7 @@ using namespace pid;
 
 ServoMotor::Settings servo_config = {
     .update_period_seconds = 128 * 1e-6,
+    .delta_regulator_update_period_seconds = 0.010,
     .ready_max_abs_error = 5,
     .delta_position = {
         .pid = {
@@ -40,7 +41,7 @@ ServoMotor::Settings servo_config = {
             .mode = pid::TunerMode::no_overshoot,
             .cycles = 10,
         },
-        .abs_max_out = 100
+        .abs_max_out = 800
     },
 };
 
@@ -78,37 +79,121 @@ void goToPosition(int32_t position, float speed) {
     logFloat(position);
     logFloat(speed);
 
-    left_servo.enable();
-
     left_servo.setTargetPosition(position);
     left_servo.setSpeedLimit(speed);
+
+    left_servo.enable();
 
     while (not left_servo.isReady()) {
         left_servo.update();
         delayMicroseconds(update_period);
     }
 
+    left_servo.disable();
+
     logMsg(left_servo.getCurrentPosition());
     logMsg("Done\n\n");
+}
 
-    left_servo.disable();
+void goSpeed(ServoMotor &motor, float speed) {
+    const auto update_period = motor.getUpdatePeriodUs();
+
+    logMsg("\ngoSpeed\n");
+    logFloat(speed);
+
+    uint32_t end_time_ms = millis() + 6000;
+
+    const float dt = motor.getUpdatePeriodSeconds();
+    const double position_update_period_seconds = 0.010;
+    const auto pos_update_period_ms = uint32_t(position_update_period_seconds * 1e3);
+    const double delta = speed * position_update_period_seconds;
+
+    double target = motor.getCurrentPosition();
+
+    uint32_t next = millis() + pos_update_period_ms;
+
+    while (millis() < end_time_ms) {
+        const int32_t current_position = motor.getCurrentPosition();
+        const double error = target - current_position;
+
+        if (millis() > next) {
+            next = millis() + pos_update_period_ms;
+            target += delta;
+        }
+
+        motor.driver.setPower(int32_t(motor.delta_position_regulator.calc(error, dt)));
+
+        delayMicroseconds(update_period);
+    }
+
+    Serial.printf("%f\t%d\n", target, motor.getCurrentPosition());
+
+    logMsg("Done\n\n");
+}
+
+void goSpeedReg(ServoMotor &motor, float speed) {
+    const auto update_period = motor.getUpdatePeriodUs();
+
+    logMsg("\ngoSpeed\n");
+    logFloat(speed);
+
+    uint32_t end_time_ms = millis() + 6000;
+
+    motor.delta_position_regulator_target = motor.getCurrentPosition();
+
+    while (millis() < end_time_ms) {
+        motor.setDriverPowerBySpeed(speed);
+        delayMicroseconds(update_period);
+    }
+
+    Serial.printf("%f\t%d\n", motor.delta_position_regulator_target, motor.getCurrentPosition());
+
+    logMsg("Done\n\n");
+}
+
+void testSpeed(ServoMotor &motor) {
+    motor.driver.setPower(255);
+
+    uint32_t end_time_ms = millis() + 6000;
+
+    const double position_update_period_seconds = 0.010;
+    const auto pos_update_period_ms = uint32_t(position_update_period_seconds * 1e3);
+
+    uint32_t current_position, last_position = 0, i = 1;
+    double avg_speed = 0;
+
+    while (millis() < end_time_ms) {
+        current_position = motor.getCurrentPosition();
+
+        avg_speed += double(current_position - last_position);
+
+        last_position = current_position;
+
+        i++;
+        delay(pos_update_period_ms);
+    }
+
+    avg_speed /= i;
+
+    logFloat(avg_speed);
 }
 
 void setup() {
     analogWriteFrequency(30000);
-    Serial.begin(9600);
+    Serial.begin(115200);
 
     delay(2000);
 
-    for (int target = 100; target < 2000; target *= -2) {
-        logFloat(target);
-        left_servo.enable();
-        const PidSettings &settings = left_servo.tunePositionRegulator(target);
-        logPid(settings);
-        left_servo.disable();
-        delay(5000);
-    }
+    left_servo.enable();
 
+    goSpeedReg(left_servo, 50);
+    goSpeedReg(left_servo, -50);
+    goSpeedReg(left_servo, -100);
+    goSpeedReg(left_servo, 200);
+    goSpeedReg(left_servo, -400);
+    goSpeedReg(left_servo, 800);
+
+    left_servo.disable();
 }
 
 void loop() {}

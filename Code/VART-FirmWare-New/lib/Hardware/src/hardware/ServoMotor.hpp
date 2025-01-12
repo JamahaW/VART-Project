@@ -21,6 +21,9 @@ namespace pid {
             /// Период обновления регулятора в секундах
             const float update_period_seconds;
 
+            /// Период обновления смещенной целевой позиции в секундах
+            const float delta_regulator_update_period_seconds;
+
             /// Максимальная абсолютная ошибка позиционирования
             const uint8_t ready_max_abs_error;
 
@@ -34,16 +37,19 @@ namespace pid {
         /// Настройки
         const Settings &settings;
 
-    private:
+        /// Регулятор шим по удержанию позиции смещения
+        Regulator delta_position_regulator;
 
         /// Драйвер
         const MotorDriverL293 driver;
 
+        /// Следующая целевая позиция смещения
+        double delta_position_regulator_target{0.0};
+
+    private:
+
         /// Энкодер
         Encoder encoder;
-
-        /// Регулятор шим по удержанию позиции смещения
-        Regulator delta_position_regulator;
 
         /// Регулятор скорости по положению
         Regulator position_regulator;
@@ -54,11 +60,12 @@ namespace pid {
         /// Целевое положение
         int32_t target_position_ticks{0};
 
-        /// Следующая целевая позиция смещения
-        double target_delta_position_ticks{0.0};
-
         /// Сервопривод включен
         bool is_enabled{false};
+
+        uint32_t delta_position_regulator_next_update_time_ms{0};
+
+        const uint32_t delta_position_regulator_update_period_ms;
 
     public:
 
@@ -67,7 +74,8 @@ namespace pid {
             driver(driver),
             encoder(encoder),
             delta_position_regulator(settings.delta_position),
-            position_regulator(settings.position) {}
+            position_regulator(settings.position),
+            delta_position_regulator_update_period_ms(uint32_t(settings.delta_regulator_update_period_seconds * 1e3)) {}
 
         /// Отключить сервопривод
         void disable() {
@@ -79,6 +87,7 @@ namespace pid {
         /// Включить сервопривод
         void enable() {
             encoder.enable();
+            delta_position_regulator_target = getCurrentPosition();
             is_enabled = true;
         }
 
@@ -97,7 +106,7 @@ namespace pid {
         }
 
         /// Установить новое текущее положение
-        void setCurrentPosition(int new_position_ticks) {
+        void setCurrentPosition(int32_t new_position_ticks) {
             encoder.setPosition(new_position_ticks);
         }
 
@@ -164,9 +173,16 @@ namespace pid {
 
         /// Установить мощность на драйвер по заданной скорости
         void setDriverPowerBySpeed(float speed) {
-            const double delta_position_error = calcDeltaPositionError(speed);
-            const int32_t &power = int32_t(delta_position_regulator.calc(delta_position_error, getUpdatePeriodSeconds()));
-            driver.setPower(power);
+            const float dt = getUpdatePeriodSeconds();
+
+            if (millis() > delta_position_regulator_next_update_time_ms) {
+                delta_position_regulator_next_update_time_ms = millis() + delta_position_regulator_update_period_ms;
+                delta_position_regulator_target += speed * settings.delta_regulator_update_period_seconds;
+            }
+
+            const double error = delta_position_regulator_target - getCurrentPosition();
+
+            driver.setPower(int32_t(delta_position_regulator.calc(error, dt)));
         }
 
     private:
@@ -182,10 +198,5 @@ namespace pid {
             return target_position_ticks - getCurrentPosition();
         }
 
-        /// Расчитать ошибку позиционирования
-        double calcDeltaPositionError(float target_speed) {
-            target_delta_position_ticks += target_speed * getUpdatePeriodSeconds();
-            return target_delta_position_ticks - getCurrentPosition();
-        }
     };
 }  // namespace pid
