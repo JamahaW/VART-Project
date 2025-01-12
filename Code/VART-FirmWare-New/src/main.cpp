@@ -2,6 +2,8 @@
 #include <cstdint>
 #include "vart/Devices.hpp"
 
+#include "ui/Factory.hpp"
+
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
@@ -20,15 +22,41 @@ void goTo(vart::PositionController &controller, int16_t x, int16_t y) {
 #define makeTask(fn, stack_size) do {                                                       \
     static StackType_t stack[stack_size];                                                   \
     static StaticTask_t task_data;                                                          \
-    xTaskCreateStaticPinnedToCore(fn, #fn, stack_size, nullptr, 10, stack, &task_data, 1);  \
+    xTaskCreateStaticPinnedToCore(fn, #fn, stack_size, nullptr, 1, stack, &task_data, 1);  \
 } while(false)
 
+
+static void buildUI(ui::Page &page) {
+
+    static int value = 0;
+
+    page.addItem(ui::button(
+        "button", [](ui::Widget *) {
+            value++;
+        }
+    ));
+
+    page.addItem(ui::display(&value, ui::ValueType::INT));
+    page.addItem(ui::spinbox(&value, 5));
+}
+
+[[noreturn]] static void uiTask(void *) {
+    vart::window.display.init();
+    ui::Page &page = vart::window.main_page;
+    buildUI(page);
+
+    while (true) {
+        vart::window.update();
+        vTaskDelay(10);
+        taskYIELD();
+    }
+}
+
 void setup() {
+    makeTask(uiTask, 4096);
+
     analogWriteFrequency(30000);
     Serial.begin(115200);
-
-
-    delay(2000);
 }
 
 void loop() {}

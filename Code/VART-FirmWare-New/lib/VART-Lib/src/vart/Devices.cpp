@@ -1,16 +1,16 @@
 #include "vart/Devices.hpp"
 #include "vart/Pins.hpp"
+#include "gfx/OLED.hpp"
 
 
-using hardware::Encoder;
 using hardware::MotorDriverL293;
 using hardware::ServoMotor;
 using vart::Pins;
 using vart::Pulley;
 
-static auto left_encoder = Encoder(Pins::left_encoder_a, Pins::left_encoder_b);
+static auto left_encoder = hardware::Encoder(Pins::left_encoder_a, Pins::left_encoder_b);
 
-static auto right_encoder = Encoder(Pins::right_encoder_a, Pins::right_encoder_b);
+static auto right_encoder = hardware::Encoder(Pins::right_encoder_a, Pins::right_encoder_b);
 
 static auto left_driver = MotorDriverL293(Pins::left_driver_a, Pins::left_driver_b);
 
@@ -72,3 +72,30 @@ PositionController::Settings position_controller_settings = {
 
 PositionController vart::position_controller = PositionController(position_controller_settings, left_pulley, right_pulley);
 
+static gfx::OLED display;
+
+static EncButton encoder(vart::Pins::user_encoder_a, vart::Pins::user_encoder_b, vart::Pins::user_encoder_button);
+
+ui::Window vart::window = ui::Window(display, []() -> ui::Event {
+    using ui::Event;
+
+    encoder.tick();
+
+    if (encoder.left()) {
+        return Event::next_item;
+    }
+    if (encoder.right()) {
+        return Event::past_item;
+    }
+    if (encoder.click()) {
+        return Event::click;
+    }
+    if (encoder.leftH()) {
+        return Event::change_up;
+    }
+    if (encoder.rightH()) {
+        return Event::change_down;
+    }
+
+    return Event::idle;
+});
