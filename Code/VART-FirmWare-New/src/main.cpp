@@ -16,6 +16,7 @@ using namespace hardware;
 ServoMotor::Settings servo_config = {
     .update_period_seconds = 128 * 1e-6,
     .ready_max_abs_error = 5,
+    .min_speed_limit = 50,
     .delta_position = {
         .regulator = {
             .pid = {
@@ -34,10 +35,10 @@ ServoMotor::Settings servo_config = {
     },
     .position = {
         .pid = {
-            .kp = 12.5555553436,
-            .ki = 0.0536988042,
-            .kd = 1938.7520751953,
-            .abs_max_i = 75
+            .kp = 10.7277431488,
+            .ki = 0.0188737996,
+            .kd = 4024.8159179688,
+            .abs_max_i = 640
         },
         .tuner = {
             .mode = pid::TunerMode::no_overshoot,
@@ -85,6 +86,7 @@ void goToPosition(int32_t position, float speed) {
     left_servo.setSpeedLimit(speed);
 
     left_servo.enable();
+    left_servo.beginMove();
 
     while (not left_servo.isReady()) {
         left_servo.update();
@@ -119,16 +121,29 @@ void setup() {
     analogWriteFrequency(30000);
     Serial.begin(115200);
 
-    delay(2000);
+    delay(8000);
 
     left_servo.enable();
 
-    goSpeedReg(left_servo, -20);
-    goSpeedReg(left_servo, 50);
-    goSpeedReg(left_servo, -100);
-    goSpeedReg(left_servo, 200);
-    goSpeedReg(left_servo, -400);
-    goSpeedReg(left_servo, 800);
+    for (int speed = 40, target = 200; speed <= 800; speed *= 2, target *= -1) {
+        goToPosition(target, float(speed));
+    }
+
+//
+//    auto p = left_servo.tunePositionRegulator(1000);
+//    logPid(p);
+//
+//    delay(1000);
+//
+//    p = left_servo.tunePositionRegulator(-500);
+//    logPid(p);
+
+//    goSpeedReg(left_servo, -20);
+//    goSpeedReg(left_servo, 50);
+//    goSpeedReg(left_servo, -100);
+//    goSpeedReg(left_servo, 200);
+//    goSpeedReg(left_servo, -400);
+//    goSpeedReg(left_servo, 800);
 
     left_servo.disable();
 }

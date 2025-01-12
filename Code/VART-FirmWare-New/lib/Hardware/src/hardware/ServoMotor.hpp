@@ -25,6 +25,9 @@ namespace hardware {
             /// Максимальная абсолютная ошибка позиционирования
             const uint8_t ready_max_abs_error;
 
+            /// Минимальный лимит скорости
+            const float min_speed_limit;
+
             /// Параметры регулятора скорости
             pid::DeltaRegulatorSettings delta_position;
 
@@ -105,7 +108,7 @@ namespace hardware {
 
         /// Установить ограничение скорости
         void setSpeedLimit(float speed) {
-            abs_speed_limit = constrain(speed, 0, position_regulator.settings.abs_max_out);
+            abs_speed_limit = constrain(speed, settings.min_speed_limit, position_regulator.settings.abs_max_out);
         }
 
         /// Достиг ли позиции?
@@ -144,6 +147,8 @@ namespace hardware {
             const auto setOutput = [this](float speed) -> void {
                 this->setDriverPowerBySpeed(speed);
             };
+
+            beginMove();
 
             position_regulator.tune(float(target_position), getUpdatePeriodUs(), getInput, setOutput);
             return position_regulator.settings.pid;
