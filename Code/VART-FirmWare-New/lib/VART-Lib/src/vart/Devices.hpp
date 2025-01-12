@@ -2,16 +2,11 @@
 
 #pragma once
 
-#include "vart/Pins.hpp"
-#include "vart/Pulley.hpp"
+#include "vart/PositionController.hpp"
 
 
 namespace vart {
 
-    /// Левый привод шкива
-    extern Pulley left_pulley;
-
-
-    /// Правый привод шкива
-    extern Pulley right_pulley;
+    /// Контроллер положения
+    extern PositionController position_controller;
 }

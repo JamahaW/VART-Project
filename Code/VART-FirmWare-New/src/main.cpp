@@ -1,59 +1,29 @@
 #include <Arduino.h>
-#include <hal/timer_types.h>
-#include <driver/timer.h>
-
 #include "vart/Devices.hpp"
+#include "vart/Macro.hpp"
 
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 
 
-#define logMsg(msg) Serial.print(msg)
-
-#define logFloat(x)   \
-  logMsg(#x " = "); \
-  Serial.println(x, 10)
-
-#define logPid(pid)      \
-  logMsg(#pid "\n");     \
-  logFloat(pid.kp);      \
-  logFloat(pid.ki);      \
-  logFloat(pid.kd);      \
-  logFloat(pid.abs_max_i)
-
-
-void waitToMove(const vart::Pulley &pulley) {
-    while (!pulley.isReady()) {
-        delay(10);
-    }
-}
-
 [[noreturn]] void pulleysTask(void *) {
     analogWriteFrequency(30000);
 //    const uint32_t us = vart::left_pulley.getUpdatePeriodUs();
 
     while (true) {
-        vart::left_pulley.update();
-        vart::right_pulley.update();
+        vart::position_controller.update();
         delay(1);
     }
 }
 
-// Функция тестирования регулятора
-void test_pulley(vart::Pulley &pulley) {
-    pulley.setEnabled(true);
-    pulley.setSpeedLimit(40);
+void waitMove(const vart::PositionController &controller) {
+    while (not controller.isReady()) { delay(10); }
+}
 
-    logMsg("go 50\n");
-    pulley.setTargetRopeLength(50);
-    waitToMove(pulley);
-
-    logMsg("go 0");
-    pulley.setTargetRopeLength(0);
-    waitToMove(pulley);
-
-    pulley.setEnabled(false);
+void goTo(vart::PositionController &controller, int16_t x, int16_t y) {
+    controller.setTargetPosition(x, y);
+    waitMove(controller);
 }
 
 #define makeTask(fn, stack_size) do {                                                       \
@@ -64,12 +34,38 @@ void test_pulley(vart::Pulley &pulley) {
 
 void setup() {
     makeTask(pulleysTask, 4096);
-
     Serial.begin(115200);
 
-    delay(1000);
+    delay(5000);
 
-    test_pulley(vart::left_pulley);
+    vart::PositionController &controller = vart::position_controller;
+    controller.setEnabled(true);
+    controller.setCurrentPositionAsHome();
+
+    controller.setSpeedLimit(5);
+    goTo(controller, 0, 100);
+
+    controller.setSpeedLimit(10);
+    goTo(controller, 0, -100);
+
+    controller.setSpeedLimit(32);
+    goTo(controller, 0, 0);
+
+    delay(2000);
+
+    controller.setSpeedLimit(4);
+    goTo(controller, -100, 0);
+
+    controller.setSpeedLimit(16);
+    goTo(controller, 0, 0);
+
+    controller.setSpeedLimit(4);
+    goTo(controller, 100, 0);
+
+    controller.setSpeedLimit(32);
+    goTo(controller, 0, 0);
+
+    controller.setEnabled(false);
 }
 
 void loop() {

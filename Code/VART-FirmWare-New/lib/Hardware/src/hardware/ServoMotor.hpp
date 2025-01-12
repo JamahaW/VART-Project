@@ -97,6 +97,7 @@ namespace hardware {
         /// Установить новое текущее положение
         void setCurrentPosition(int32_t new_position_ticks) {
             encoder.setPosition(new_position_ticks);
+            delta_position_regulator.target = getCurrentPosition();
         }
 
         /// Получить текущее положение
