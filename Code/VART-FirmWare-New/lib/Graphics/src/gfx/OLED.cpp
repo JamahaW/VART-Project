@@ -100,134 +100,54 @@ static constexpr uint32_t gfx_font_32[] = {
     0x00000fc0,  // | (124)
     0x4000cce1,  // } (125)
     0x80108108,  // ~ (126)
-
-    0xf85915b8,  // А (192)
-    0xf996597f,  // Б (193)
-    0xfa96597f,  // В (194)
-    0xc104107f,  // Г (195)
-    0xf07d17b0,  // Д (196)
-    0xf3869a7f,  // Е (197)
-    0xfb11e13b,  // Ж (198)
-    0xda961852,  // З (199)
-    0xff08423f,  // И (200)
-    0xff10943f,  // Й (201)
-    0xf128413f,  // К (202)
-    0xff042330,  // Л (203)
-    0xff0840bf,  // М (204)
-    0xff10413f,  // Н (205)
-    0xde86185e,  // О (206)
-    0xff04107f,  // П (207)
-    0xc624927f,  // Р (208)
-    0xd286185e,  // С (209)
-    0xc107f041,  // Т (210)
-    0xdf924903,  // У (211)
-    0xde4bf49e,  // Ф (212)
-    0xf12842b1,  // Х (213)
-    0xff41041f,  // Ц (214)
-    0xff104103,  // Ч (215)
-    0xff83e83f,  // Ш (216)
-    0xff41e41f,  // Щ (217)
-    0xd8924fc1,  // Ъ (218)
-    0xff62493f,  // Ы (219)
-    0xd892493f,  // Ь (220)
-    0xde965852,  // Э (221)
-    0xff87f23f,  // Ю (222)
-    0xff249276,  // Я (223)
-    0xfcaaaa90,  // а (224)
-    0xd0a69a9c,  // б (225)
-    0xf4aaaabe,  // в (226)
-    0xc20820be,  // г (227)
-    0xdcaa9a50,  // д (228)
-    0xccaaaa9c,  // е (229)
-    0xf621c236,  // ж (230)
-    0xd4aaa894,  // з (231)
-    0xfe10843e,  // и (232)
-    0xfe10943e,  // й (233)
-    0xe250823e,  // к (234)
-    0xf0302330,  // л (235)
-    0xfe10813e,  // м (236)
-    0xfe20823e,  // н (237)
-    0xdc8a289c,  // о (238)
-    0xfe0820be,  // п (239)
-    0xc428a2be,  // р (240)
-    0xd48a289c,  // с (241)
-    0xc20be082,  // т (242)
-    0xdea28a06,  // у (243)
-    0xc853e508,  // ф (244)
-    0xe2508522,  // х (245)
-    0xfe41041e,  // ц (246)
-    0xfe208206,  // ч (247)
-    0xfe83883e,  // ш (248)
-    0xfe41c41e,  // щ (249)
-    0xd0a28f82,  // ъ (250)
-    0xfe428a3e,  // ы (251)
-    0xd0a28a3e,  // ь (252)
-    0xdcaaa894,  // э (253)
-    0xdc89c23e,  // ю (254)
-    0xfe4924ac,  // я (255)
 };
 
-#define OLED_HEIGHT_64 0x12
-#define OLED_64 0x3F
-
-#define OLED_DISPLAY_OFF 0xAE
-#define OLED_DISPLAY_ON 0xAF
-
-#define OLED_COMMAND_MODE 0x00
-#define OLED_ONE_COMMAND_MODE 0x80
-#define OLED_DATA_MODE 0x40
-
-#define OLED_ADDRESSING_MODE 0x20
-#define OLED_VERTICAL 0x01
-
-#define OLED_NORMAL_V 0xC8
-#define OLED_FLIP_V 0xC0
-#define OLED_NORMAL_H 0xA1
-#define OLED_FLIP_H 0xA0
-
-#define OLED_CONTRAST 0x81
-#define OLED_SET_COM_PINS 0xDA
-#define OLED_SET_V_COM_DETECT 0xDB
-#define OLED_CLOCK_DIV 0xD5
-#define OLED_SET_MULTIPLEX 0xA8
-#define OLED_COLUMN_ADDRESS 0x21
-#define OLED_PAGE_ADDRESS 0x22
-#define OLED_CHARGE_PUMP 0x8D
-
-#define OLED_NORMAL_DISPLAY 0xA6
-#define OLED_INVERT_DISPLAY 0xA7
-
-
-static uint16_t calcWideByte(uint8_t data) {
-    static constexpr uint8_t bitDecode[] = {0x00, 0x03, 0x0C, 0x0F};
-
-    uint16_t ret = 0;
-    for (uint8_t i = 0; i < 8; i += 2) {
-        ret |= (bitDecode[((0b11 << i) & data) >> i] << (i << 1));
-    }
-    return ret;
-}
+enum OledCmd : unsigned char {
+    oled_height_64 = 0x12,
+    oled_64 = 0x3F,
+    oled_display_off = 0xAE,
+    oled_display_on = 0xAF,
+    oled_command_mode = 0x00,
+    oled_one_command_mode = 0x80,
+    oled_data_mode = 0x40,
+    oled_addressing_mode = 0x20,
+    oled_vertical = 0x01,
+    oled_normal_v = 0xC8,
+    oled_flip_v = 0xC0,
+    oled_normal_h = 0xA1,
+    oled_flip_h = 0xA0,
+    oled_contrast = 0x81,
+    oled_set_com_pins = 0xDA,
+    oled_set_v_com_detect = 0xDB,
+    oled_clock_div = 0xD5,
+    oled_set_multiplex = 0xA8,
+    oled_column_address = 0x21,
+    oled_page_address = 0x22,
+    oled_charge_pump = 0x8D,
+    oled_normal_display = 0xA6,
+    oled_invert_display = 0xA7,
+    oled_max_row = 7,
+    oled_max_x = 127,
+    oled_font_width = 6,
+};
 
 static uint32_t getFont(uint8_t code) {
-    if (code < 127) {
-        return gfx_font_32[code - 32];
-    }
-    return gfx_font_32[code - 49];
+    const uint32_t unknown = gfx_font_32['?'];
+    return (code < 127) ? gfx_font_32[code - 32] : unknown;
 }
 
 static const uint8_t oled_init_commands[] = {
-    OLED_DISPLAY_OFF, OLED_CLOCK_DIV, 0x80,  // value
-    OLED_CHARGE_PUMP, 0x14,  // value
-    OLED_ADDRESSING_MODE, OLED_VERTICAL, OLED_NORMAL_H, OLED_NORMAL_V, OLED_CONTRAST, 0x7F,  // value
-    OLED_SET_V_COM_DETECT, 0x40,  // value
-    OLED_NORMAL_DISPLAY, OLED_DISPLAY_ON,
+    oled_display_off, oled_clock_div, 0x80,  // value
+    oled_charge_pump, 0x14,  // value
+    oled_addressing_mode, oled_vertical, oled_normal_h, oled_normal_v, oled_contrast, 0x7F,  // value
+    oled_set_v_com_detect, 0x40,  // value
+    oled_normal_display, oled_display_on,
 };
 
 gfx::OLED::OLED(uint8_t address) :
     address(address) {
 }
 
-#define OLED_FONT_WIDTH 6
 #define OLED_FONT_GET_COL(f, col) (((f) >> (col)) & 0b111111)
 #define OLED_FONT_GET_WIDTH(f) (((f) >> 30) & 0b11)
 
@@ -238,34 +158,26 @@ size_t gfx::OLED::write(uint8_t data) {
 
     if (data == '\n') {
         clearAfterCursor();
-        setCursor(0, cursor_row + font_height);
+        setCursor(0, cursor_row + 1);
         return 1;
     }
 
     uint32_t bits = getFont(data);
-    uint8_t width_6 = (2 * OLED_FONT_WIDTH) + OLED_FONT_GET_WIDTH(bits) * OLED_FONT_WIDTH;
+    uint8_t width_6 = (2 * oled_font_width) + OLED_FONT_GET_WIDTH(bits) * oled_font_width;
     uint8_t col;
 
     beginData();
 
-    for (uint8_t offset = 0; offset < width_6; offset += OLED_FONT_WIDTH, cursor_x += font_width) {
+    for (uint8_t offset = 0; offset < width_6; offset += oled_font_width, cursor_x++) {
         col = OLED_FONT_GET_COL(bits, offset) ^ text_mask;
 
-        for (uint8_t t = 0; t < font_width; t++) {
-
-            if (font_height == 1) {
-                sendByte(col);
-            } else if (font_height == 2) {
-                uint16_t f_data = calcWideByte(col);
-                sendByte(lowByte(f_data));
-                sendByte(highByte(f_data));
-            }
+        for (uint8_t t = 0; t < 1; t++) {
+            sendByte(col);
         }
     }
 
-    for (uint8_t i = 0; i < font_height; i++) {
-        sendByte(text_mask);
-    }
+
+    sendByte(text_mask);
 
     endTransmission();
 
@@ -284,17 +196,17 @@ void gfx::OLED::init(uint32_t clock) {
     endTransmission();
 
     beginCommand();
-    sendByte(OLED_SET_COM_PINS);
-    sendByte(OLED_HEIGHT_64);
-    sendByte(OLED_SET_MULTIPLEX);
-    sendByte(OLED_64);
+    sendByte(oled_set_com_pins);
+    sendByte(oled_height_64);
+    sendByte(oled_set_multiplex);
+    sendByte(oled_64);
     endTransmission();
 
     clear();
 }
 
 void gfx::OLED::clear() {
-    clear(0, 0, OLED_MAX_X, OLED_MAX_ROW);
+    clear(0, 0, oled_max_x, oled_max_row);
     setCursor(0, 0);
 }
 
@@ -313,7 +225,7 @@ void gfx::OLED::clear(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1) {
 }
 
 void gfx::OLED::clearAfterCursor() {
-    clear(cursor_x, cursor_row, OLED_MAX_X, cursor_row + font_height - 1);
+    clear(cursor_x, cursor_row, oled_max_x, cursor_row);
 }
 
 void gfx::OLED::setCursor(uint8_t new_x, uint8_t new_row) {
@@ -323,12 +235,12 @@ void gfx::OLED::setCursor(uint8_t new_x, uint8_t new_row) {
 }
 
 void gfx::OLED::setBright(uint8_t value) {
-    sendCommand((value > 0) ? OLED_DISPLAY_ON : OLED_DISPLAY_OFF);
+    sendCommand((value > 0) ? oled_display_on : oled_display_off);
     sendTwoCommands(value);
 }
 
 void gfx::OLED::setInvertColor(bool mode) {
-    sendCommand(mode ? OLED_INVERT_DISPLAY : OLED_NORMAL_DISPLAY);
+    sendCommand(mode ? oled_invert_display : oled_normal_display);
 }
 
 void gfx::OLED::setInvertText(bool mode) {
@@ -336,17 +248,11 @@ void gfx::OLED::setInvertText(bool mode) {
 }
 
 void gfx::OLED::setFlipV(bool mode) {
-    sendCommand(mode ? OLED_FLIP_V : OLED_NORMAL_V);
+    sendCommand(mode ? oled_flip_v : oled_normal_v);
 }
 
 void gfx::OLED::setFlipH(bool mode) {
-    sendCommand(mode ? OLED_FLIP_H : OLED_NORMAL_H);
-}
-
-void gfx::OLED::setFont(Font font) {
-    font_height = ((uint8_t) font & 0xF0) >> 4;
-    font_width = ((uint8_t) font & 0x0F);
-    updateTextWindow();
+    sendCommand(mode ? oled_flip_h : oled_normal_h);
 }
 
 void gfx::OLED::sendByte(uint8_t data) {
@@ -373,29 +279,29 @@ void gfx::OLED::sendTwoCommands(uint8_t cmd2) {
 
 void gfx::OLED::setWindow(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1) {
     beginCommand();
-    Wire.write(OLED_COLUMN_ADDRESS);
-    Wire.write(constrain(x0, 0, OLED_MAX_X));
-    Wire.write(constrain(x1, 0, OLED_MAX_X));
-    Wire.write(OLED_PAGE_ADDRESS);
-    Wire.write(constrain(y0, 0, OLED_MAX_ROW));
-    Wire.write(constrain(y1, 0, OLED_MAX_ROW));
+    Wire.write(oled_column_address);
+    Wire.write(constrain(x0, 0, oled_max_x));
+    Wire.write(constrain(x1, 0, oled_max_x));
+    Wire.write(oled_page_address);
+    Wire.write(constrain(y0, 0, oled_max_row));
+    Wire.write(constrain(y1, 0, oled_max_row));
     endTransmission();
 }
 
 void gfx::OLED::updateTextWindow() {
-    setWindow(cursor_x, cursor_row, OLED_MAX_X, cursor_row + font_height - 1);
+    setWindow(cursor_x, cursor_row, oled_max_x, cursor_row);
 }
 
 void gfx::OLED::beginData() {
-    beginTransmission(OLED_DATA_MODE);
+    beginTransmission(oled_data_mode);
 }
 
 void gfx::OLED::beginCommand() {
-    beginTransmission(OLED_COMMAND_MODE);
+    beginTransmission(oled_command_mode);
 }
 
 void gfx::OLED::beginOneCommand() {
-    beginTransmission(OLED_ONE_COMMAND_MODE);
+    beginTransmission(oled_one_command_mode);
 }
 
 void gfx::OLED::endTransmission() {
@@ -409,9 +315,9 @@ void gfx::OLED::beginTransmission(uint8_t mode) const {
 }
 
 bool gfx::OLED::isEndY() const {
-    return cursor_row > OLED_MAX_ROW;
+    return cursor_row > oled_max_row;
 }
 
 bool gfx::OLED::isEndX() const {
-    return cursor_x > OLED_MAX_X - OLED_FONT_WIDTH;
+    return cursor_x > oled_max_x - oled_font_width;
 }

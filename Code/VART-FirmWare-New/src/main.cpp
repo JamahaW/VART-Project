@@ -36,8 +36,8 @@ static void buildUI(ui::Page &page) {
         }
     ));
 
-    page.addItem(ui::display(&value, ui::ValueType::INT));
-    page.addItem(ui::spinbox(&value, 5));
+    page.addItem(ui::display(&value, ui::ValueType::Integer));
+    page.addItem(ui::spinBox(&value, 5));
 }
 
 [[noreturn]] static void uiTask(void *) {
@@ -47,7 +47,7 @@ static void buildUI(ui::Page &page) {
 
     while (true) {
         vart::window.update();
-        vTaskDelay(10);
+        vTaskDelay(1);
         taskYIELD();
     }
 }

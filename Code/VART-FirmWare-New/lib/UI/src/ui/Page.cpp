@@ -8,11 +8,11 @@
 
 
 ui::Page::Page(ui::Window &window, const char *title) :
-    window(window), title(title), to_this_page(ValueType::CHARS, (void *) this->title, [&window, this](Widget *w) {
+    window(window), title(title), to_this_page(ValueType::Chars, (void *) this->title, [&window, this](Widget *w) {
     window.current_page = this;
     window.display.clear();
 }) {
-    to_this_page.setStyle(ui::Style::ARROW_PREFIX);
+    to_this_page.setStyle(ui::Style::arrow_prefix);
 }
 
 void ui::Page::render(gfx::OLED &display) const {
@@ -20,7 +20,6 @@ void ui::Page::render(gfx::OLED &display) const {
 
     display.setCursor(0, 0);
 
-    display.setFont(gfx::Font::SINGLE);
     display.println(title);
 
     uint8_t begin = max(cursor - gui_last_item_index, 0);

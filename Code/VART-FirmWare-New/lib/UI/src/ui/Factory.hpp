@@ -10,7 +10,7 @@ namespace ui {
 
     Widget *display(void *value, ValueType type);
 
-    Widget *spinbox(
+    Widget *spinBox(
             int *value,
             int step = 1,
             std::function<void(Widget *)> on_spin = nullptr,
@@ -18,7 +18,7 @@ namespace ui {
             int min = 0
     );
 
-    Widget *spinboxF(
+    Widget *spinBoxF(
             float *value,
             float step = 0.1F,
             float max = 1.0F,

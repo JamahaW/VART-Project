@@ -3,11 +3,6 @@
 #include <Print.h>
 #include <cstdint>
 
-#include <gfx/Font.hpp>
-
-
-#define OLED_MAX_ROW 7
-#define OLED_MAX_X 127
 
 namespace gfx {
 // TODO интерфейс для текстовых дисплеев
@@ -17,8 +12,6 @@ namespace gfx {
         const uint8_t address;
 
         uint8_t text_mask = 0;
-        uint8_t font_width = 1;
-        uint8_t font_height = 1;
 
         uint8_t cursor_x = 0;
         uint8_t cursor_row = 0;
@@ -84,10 +77,6 @@ namespace gfx {
 
         /// @brief Отразить дисплей по горизонтали
         void setFlipH(bool mode);
-
-        /// @brief Установить режим вывода текста
-        /// @param font DOUBLE, SINGLE
-        void setFont(enum Font font);
 
         /// Дисплей закончился по Y
         bool isEndY() const;

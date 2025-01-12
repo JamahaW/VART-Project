@@ -3,29 +3,27 @@
 #include <functional>
 
 #include <gfx/OLED.hpp>
-
 #include <ui/Item.hpp>
 
 
 namespace ui {
 
     enum Style : unsigned char {
-        CLEAN = 0,
-        SQUARE_FRAMED = 1,
-        TRIANGLE_FRAMED = 2,
-        ARROW_PREFIX = 3,
+        clean = 0,
+        square_framed = 1,
+        triangle_framed = 2,
+        arrow_prefix = 3,
     };
 
     enum class ValueType : unsigned char {
-        CHARS = 0,
-        INT = 1,
-        FLOAT = 2,
+        Chars = 0,
+        Integer = 1,
+        Float = 2,
     };
 
     class Widget : public Item {
     private:
-        gfx::Font font{gfx::Font::SINGLE};
-        Style style{Style::CLEAN};
+        Style style{Style::clean};
 
         const ValueType type;
         const std::function<void(Widget *)> on_click;
@@ -43,11 +41,6 @@ namespace ui {
 
         Widget *setStyle(Style new_style) {
             style = new_style;
-            return this;
-        }
-
-        Widget *setFont(gfx::Font new_font) {
-            font = new_font;
             return this;
         }
 

@@ -2,33 +2,32 @@
 
 
 ui::Widget::Widget(
-        ValueType type,
-        void *value,
-        std::function<void(Widget *)> &&on_click,
-        std::function<void(Widget *, int)> &&on_change
+    ValueType type,
+    void *value,
+    std::function<void(Widget *)> &&on_click,
+    std::function<void(Widget *, int)> &&on_change
 ) :
-        type(type),
-        value(value),
-        on_change(on_change),
-        on_click(on_click) {
+    type(type),
+    value(value),
+    on_change(on_change),
+    on_click(on_click) {
 }
 
 static constexpr char style_begin[]{
-        0,      // CLEAN
-        '[',    // SQUARE_FRAMED
-        '<',    // TRIANGLE_FRAMED
-        '>',    // ARROW_PREFIX
+    0,      // clean
+    '[',    // square_framed
+    '<',    // triangle_framed
+    '>',    // arrow_prefix
 };
 
 static constexpr char style_end[]{
-        0,      // CLEAN
-        ']',    // SQUARE_FRAMED
-        '>',    // TRIANGLE_FRAMED
-        0       // ARROW_PREFIX
+    0,      // clean
+    ']',    // square_framed
+    '>',    // triangle_framed
+    0       // arrow_prefix
 };
 
 void ui::Widget::render(gfx::OLED &display, bool selected) const {
-    display.setFont(font);
     display.setInvertText(selected);
 
     display.write(style_begin[style]);
@@ -53,16 +52,13 @@ void ui::Widget::draw(gfx::OLED &display) const {
     }
 
     switch (type) {
-        case ValueType::CHARS:
-            display.print((const char *) value);
+        case ValueType::Chars:display.print((const char *) value);
             return;
 
-        case ValueType::INT:
-            display.print(*(int *) value);
+        case ValueType::Integer:display.print(*(int *) value);
             return;
 
-        case ValueType::FLOAT:
-            display.print(*(float *) value);
+        case ValueType::Float:display.print(*(float *) value);
             return;
     }
 }
