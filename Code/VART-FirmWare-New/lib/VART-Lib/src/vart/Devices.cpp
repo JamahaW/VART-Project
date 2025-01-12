@@ -5,8 +5,9 @@ using hardware::Encoder;
 using hardware::MotorDriverL293;
 using hardware::ServoMotor;
 using vart::Pins;
+using vart::Pulley;
 
-ServoMotor::Settings servo_settings = {
+static ServoMotor::Settings servo_settings = {
     .update_period_seconds = 128 * 1e-6,
     .ready_max_abs_error = 5,
     .min_speed_limit = 80,
@@ -49,6 +50,14 @@ static auto left_driver = MotorDriverL293(Pins::left_driver_a, Pins::left_driver
 
 static auto right_driver = MotorDriverL293(Pins::right_driver_a, Pins::right_driver_b);
 
-ServoMotor vart::left_servo = ServoMotor(servo_settings, left_driver, left_encoder);
+static auto left_servo = ServoMotor(servo_settings, left_driver, left_encoder);
 
-ServoMotor vart::right_servo = ServoMotor(servo_settings, right_driver, right_encoder);
+static auto right_servo = ServoMotor(servo_settings, right_driver, right_encoder);
+
+static const Pulley::Settings pulley_settings = {
+    .ticks_in_mm = 10,
+};
+
+Pulley vart::left_pulley = Pulley(pulley_settings, left_servo);
+
+Pulley vart::right_pulley = Pulley(pulley_settings, right_servo);

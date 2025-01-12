@@ -21,50 +21,12 @@
   logFloat(pid.abs_max_i)
 
 
-void goToPosition(hardware::ServoMotor &servo, int32_t position, float speed) {
-    const auto update_period = servo.getUpdatePeriodUs();
+void sweep(vart::Pulley &pulley) {
+    pulley.update();
 
-    logMsg("\ngoToPosition\n");
-    logFloat(position);
-    logFloat(speed);
-
-    servo.enable();
-
-    servo.setTargetPosition(position);
-    servo.setSpeedLimit(speed);
-
-    servo.enable();
-    servo.beginMove();
-
-    while (not servo.isReady()) {
-        servo.update();
-        delayMicroseconds(update_period);
+    if (pulley.isReady()) {
+        pulley.setTargetRopeLength(-pulley.getCurrentRopeLength());
     }
-
-    servo.disable();
-
-    logMsg(servo.getCurrentPosition());
-    logMsg("Done\n\n");
-
-    delay(100);
-}
-
-void goSpeedReg(hardware::ServoMotor &motor, float speed) {
-    const auto update_period = motor.getUpdatePeriodUs();
-
-    logMsg("\ngoSpeed\n");
-    logFloat(speed);
-
-    uint32_t end_time_ms = millis() + 4000;
-
-    motor.beginMove();
-
-    while (millis() < end_time_ms) {
-        motor.setDriverPowerBySpeed(speed);
-        delayMicroseconds(update_period);
-    }
-
-    logMsg("Done\n\n");
 }
 
 void setup() {
@@ -73,13 +35,29 @@ void setup() {
 
     delay(2000);
 
-    goToPosition(vart::left_servo, 500, 50);
-    goToPosition(vart::left_servo, -500, 100);
-    goToPosition(vart::left_servo, 500, 200);
-    goToPosition(vart::right_servo, 500, 400);
-    goToPosition(vart::right_servo, -500, 800);
+    auto &left = vart::left_pulley;
+    auto &right = vart::right_pulley;
+    static const uint32_t period_us = left.getUpdatePeriodUs();
+
+    left.setTargetRopeLength(50);
+    left.setEnabled(true);
+    left.setSpeedLimit(20);
+
+    right.setTargetRopeLength(30);
+    right.setEnabled(true);
+    right.setSpeedLimit(50);
+
+    while (millis() < 20000) {
+        sweep(left);
+        sweep(right);
+        delayMicroseconds(period_us);
+    }
+
+    left.setEnabled(false);
+    right.setEnabled(false);
 }
 
-void loop() {}
+void loop() {
+}
 
 #pragma clang diagnostic pop
