@@ -8,7 +8,7 @@ using vart::Pins;
 using vart::Pulley;
 
 static ServoMotor::Settings servo_settings = {
-    .update_period_seconds = 128 * 1e-6,
+    .update_period_seconds = 1000 * 1e-6,
     .ready_max_abs_error = 5,
     .min_speed_limit = 80,
     .delta_position = {
@@ -55,7 +55,7 @@ static auto left_servo = ServoMotor(servo_settings, left_driver, left_encoder);
 static auto right_servo = ServoMotor(servo_settings, right_driver, right_encoder);
 
 static const Pulley::Settings pulley_settings = {
-    .ticks_in_mm = 10,
+    .ticks_in_mm = 5000.0 / 280.0,
 };
 
 Pulley vart::left_pulley = Pulley(pulley_settings, left_servo);

@@ -1,12 +1,11 @@
 #pragma once
 
 #include <Arduino.h>
-#include <cstdint>
 
 
 #include "hardware/Encoder.hpp"
 #include "hardware/MotorDriver.hpp"
-#include "pid/DeltaRegulator.hpp"
+#include <pid/DeltaRegulator.hpp>
 
 
 namespace hardware {
