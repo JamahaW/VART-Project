@@ -6,7 +6,6 @@
 
 #include "hardware/Encoder.hpp"
 #include "hardware/MotorDriver.hpp"
-#include "pid/Regulator.hpp"
 #include "pid/DeltaRegulator.hpp"
 
 
@@ -38,16 +37,16 @@ namespace hardware {
         /// Настройки
         Settings &settings;
 
+    private:
+
         /// Регулятор шим по удержанию позиции смещения
         pid::DeltaRegulator delta_position_regulator{settings.delta_position};
 
-    private:
-
         /// Энкодер
-        Encoder encoder;
+        Encoder &encoder;
 
         /// Драйвер
-        const MotorDriverL293 driver;
+        const MotorDriverL293 &driver;
 
         /// Регулятор скорости по положению
         pid::Regulator position_regulator;
@@ -64,7 +63,7 @@ namespace hardware {
 
     public:
 
-        explicit ServoMotor(Settings &settings, const MotorDriverL293 &driver, const Encoder &encoder) :
+        explicit ServoMotor(Settings &settings, const MotorDriverL293 &driver, Encoder &encoder) :
             settings(settings),
             encoder(encoder), driver(driver),
             position_regulator(settings.position) {}
@@ -140,6 +139,8 @@ namespace hardware {
         }
 
         const pid::PidSettings &tunePositionRegulator(int32_t target_position) {
+            enable();
+
             const auto getInput = [this]() -> float {
                 return float(this->getCurrentPosition());
             };
@@ -151,6 +152,9 @@ namespace hardware {
             beginMove();
 
             position_regulator.tune(float(target_position), getUpdatePeriodUs(), getInput, setOutput);
+
+            disable();
+
             return position_regulator.settings.pid;
         }
 

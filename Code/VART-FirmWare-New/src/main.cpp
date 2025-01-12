@@ -1,65 +1,11 @@
 #include <Arduino.h>
 
-#include "vart/Pins.hpp"
-
-#include "hardware/Encoder.hpp"
-#include "hardware/MotorDriver.hpp"
-#include "hardware/ServoMotor.hpp"
+#include "vart/Devices.hpp"
 
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 
-using namespace pid;
-using namespace hardware;
-
-ServoMotor::Settings servo_config = {
-    .update_period_seconds = 128 * 1e-6,
-    .ready_max_abs_error = 5,
-    .min_speed_limit = 50,
-    .delta_position = {
-        .regulator = {
-            .pid = {
-                .kp = 16.1296730042,
-                .ki = 0.0492058247,
-                .kd = 2244.5698242188,
-                .abs_max_i = 204
-            },
-            .tuner = {
-                .mode = pid::TunerMode::no_overshoot,
-                .cycles = 20,
-            },
-            .abs_max_out = 255
-        },
-        .update_period_seconds = 0.010,
-    },
-    .position = {
-        .pid = {
-            .kp = 10.7277431488,
-            .ki = 0.0188737996,
-            .kd = 4024.8159179688,
-            .abs_max_i = 640
-        },
-        .tuner = {
-            .mode = pid::TunerMode::no_overshoot,
-            .cycles = 10,
-        },
-        .abs_max_out = 800
-    },
-};
-
-
-auto left_servo = ServoMotor(
-    servo_config,
-    MotorDriverL293(vart::Pins::left_driver_a, vart::Pins::left_driver_b),
-    Encoder(vart::Pins::left_encoder_a, vart::Pins::left_encoder_b)
-);
-
-//auto right_servo = ServoMotor(
-//    servo_config,
-//    MotorDriverL293(vart::Pins::right_driver_a, vart::Pins::right_driver_b),
-//    Encoder(vart::Pins::right_encoder_a, vart::Pins::right_encoder_b)
-//);
 
 #define logMsg(msg) Serial.print(msg)
 
@@ -75,31 +21,35 @@ auto left_servo = ServoMotor(
   logFloat(pid.abs_max_i)
 
 
-void goToPosition(int32_t position, float speed) {
-    const auto update_period = left_servo.getUpdatePeriodUs();
+void goToPosition(hardware::ServoMotor &servo, int32_t position, float speed) {
+    const auto update_period = servo.getUpdatePeriodUs();
 
     logMsg("\ngoToPosition\n");
     logFloat(position);
     logFloat(speed);
 
-    left_servo.setTargetPosition(position);
-    left_servo.setSpeedLimit(speed);
+    servo.enable();
 
-    left_servo.enable();
-    left_servo.beginMove();
+    servo.setTargetPosition(position);
+    servo.setSpeedLimit(speed);
 
-    while (not left_servo.isReady()) {
-        left_servo.update();
+    servo.enable();
+    servo.beginMove();
+
+    while (not servo.isReady()) {
+        servo.update();
         delayMicroseconds(update_period);
     }
 
-    left_servo.disable();
+    servo.disable();
 
-    logMsg(left_servo.getCurrentPosition());
+    logMsg(servo.getCurrentPosition());
     logMsg("Done\n\n");
+
+    delay(100);
 }
 
-void goSpeedReg(ServoMotor &motor, float speed) {
+void goSpeedReg(hardware::ServoMotor &motor, float speed) {
     const auto update_period = motor.getUpdatePeriodUs();
 
     logMsg("\ngoSpeed\n");
@@ -121,31 +71,13 @@ void setup() {
     analogWriteFrequency(30000);
     Serial.begin(115200);
 
-    delay(8000);
+    delay(2000);
 
-    left_servo.enable();
-
-    for (int speed = 40, target = 200; speed <= 800; speed *= 2, target *= -1) {
-        goToPosition(target, float(speed));
-    }
-
-//
-//    auto p = left_servo.tunePositionRegulator(1000);
-//    logPid(p);
-//
-//    delay(1000);
-//
-//    p = left_servo.tunePositionRegulator(-500);
-//    logPid(p);
-
-//    goSpeedReg(left_servo, -20);
-//    goSpeedReg(left_servo, 50);
-//    goSpeedReg(left_servo, -100);
-//    goSpeedReg(left_servo, 200);
-//    goSpeedReg(left_servo, -400);
-//    goSpeedReg(left_servo, 800);
-
-    left_servo.disable();
+    goToPosition(vart::left_servo, 500, 50);
+    goToPosition(vart::left_servo, -500, 100);
+    goToPosition(vart::left_servo, 500, 200);
+    goToPosition(vart::right_servo, 500, 400);
+    goToPosition(vart::right_servo, -500, 800);
 }
 
 void loop() {}
