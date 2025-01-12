@@ -26,12 +26,6 @@ int32_t pid::Encoder::getPosition() const {
     return current_position_ticks;
 }
 
-float pid::Encoder::calcSpeed(float delta_seconds) const {
-    const auto ret = float(getPosition() - last_position_ticks) / delta_seconds;
-    last_position_ticks = getPosition();
-    return ret;
-}
-
 void pid::Encoder::setPosition(int32_t new_position_ticks) {
     current_position_ticks = new_position_ticks;
 }

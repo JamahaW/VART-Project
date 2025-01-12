@@ -51,7 +51,7 @@ namespace pid {
         void startTuningLoop(unsigned long us);
 
         // Automatically tuneSpeed PidSettings
-        // This function must be run in a loop at the same speed as the PidSettings loop being
+        // This function must be run in a loop at the same delta_position as the PidSettings loop being
         // tuned See README for more details -
         // https://github.com/jackw01/arduino-pid-autotuner/blob/master/README.md
         float tunePID(float input, unsigned long us);

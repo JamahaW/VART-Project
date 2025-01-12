@@ -50,7 +50,7 @@ void setup() {
     long microseconds;
     while (!tuner.isFinished()) {
 
-        // This loop must run at the same speed as the PidSettings control loop being tuned
+        // This loop must run at the same delta_position as the PidSettings control loop being tuned
         long prevMicroseconds = microseconds;
         microseconds = micros();
 
@@ -65,7 +65,7 @@ void setup() {
         // incorrect.
         doSomethingToSetOutput(output);
 
-        // This loop must run at the same speed as the PidSettings control loop being tuned
+        // This loop must run at the same delta_position as the PidSettings control loop being tuned
         while (micros() - microseconds < loopInterval) delayMicroseconds(1);
     }
 

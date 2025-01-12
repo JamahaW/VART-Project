@@ -18,8 +18,6 @@ namespace pid {
         /// Текущая позиция в тиках
         volatile int32_t current_position_ticks = 0;
 
-        mutable int32_t last_position_ticks{0};
-
     public:
 
         explicit Encoder(uint8_t pin_phase_a, uint8_t pin_phase_b);
@@ -29,9 +27,6 @@ namespace pid {
 
         /// Установить текущее положение
         void setPosition(int32_t new_position_ticks);
-
-        /// Расчитать текущую скорость
-        float calcSpeed(float delta_seconds) const;
 
         /// Подключить обработчик прерывания
         void enable() const;

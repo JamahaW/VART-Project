@@ -25,7 +25,7 @@ namespace pid {
             const uint8_t ready_max_abs_error;
 
             /// Параметры регулятора скорости
-            RegulatorSettings speed;
+            RegulatorSettings delta_position;
 
             /// Параметры регулятора позиции
             RegulatorSettings position;
@@ -42,8 +42,8 @@ namespace pid {
         /// Энкодер
         Encoder encoder;
 
-        /// Регулятор шим по скорости
-        Regulator speed_regulator;
+        /// Регулятор шим по удержанию позиции смещения
+        Regulator delta_position_regulator;
 
         /// Регулятор скорости по положению
         Regulator position_regulator;
@@ -54,8 +54,8 @@ namespace pid {
         /// Целевое положение
         int32_t target_position_ticks{0};
 
-        /// Последняя измеренная скорость
-        float calculated_speed{0};
+        /// Следующая целевая позиция смещения
+        double target_delta_position_ticks{0.0};
 
         /// Сервопривод включен
         bool is_enabled{false};
@@ -66,14 +66,13 @@ namespace pid {
             settings(settings),
             driver(driver),
             encoder(encoder),
-            speed_regulator(settings.speed),
+            delta_position_regulator(settings.delta_position),
             position_regulator(settings.position) {}
 
         /// Отключить сервопривод
         void disable() {
             encoder.disable();
             driver.setPower(0);
-            calculated_speed = 0;
             is_enabled = false;
         }
 
@@ -112,11 +111,6 @@ namespace pid {
             abs_speed_limit = constrain(speed, 0, position_regulator.settings.abs_max_out);
         }
 
-        /// Получить текущую скорость
-        float getCurrentSpeed() const {
-            return calculated_speed;
-        }
-
         /// Достиг ли позиции?
         bool isReady() const {
             return abs(calcPositionError()) < settings.ready_max_abs_error;
@@ -132,22 +126,22 @@ namespace pid {
             return settings.update_period_seconds;
         }
 
-        /// Автоматически настроить регулятор скорости
-        void tuneSpeedRegulator(float target_speed) {
-            const auto dt = getUpdatePeriodSeconds();
-
-            const auto getInput = [this, dt]() -> float {
-                return this->encoder.calcSpeed(dt);
+        /// Автоматически настроить регулятор ШИМ по смещению положения
+        const PidSettings &tuneDeltaPositionRegulator(int32_t target_position) {
+            const auto getInput = [this]() -> float {
+                return float(this->getCurrentPosition());
             };
 
             const auto setOutput = [this](float power) -> void {
                 this->driver.setPower(int32_t(power));
             };
 
-            speed_regulator.tune(target_speed, getUpdatePeriodUs(), getInput, setOutput);
+            delta_position_regulator.tune(float(target_position), getUpdatePeriodUs(), getInput, setOutput);
+
+            return settings.delta_position.pid;
         }
 
-        void tunePositionRegulator(int32_t target_position) {
+        const PidSettings &tunePositionRegulator(int32_t target_position) {
             const auto getInput = [this]() -> float {
                 return float(this->getCurrentPosition());
             };
@@ -156,7 +150,9 @@ namespace pid {
                 this->setDriverPowerBySpeed(speed);
             };
 
-            speed_regulator.tune(float(target_position), getUpdatePeriodUs(), getInput, setOutput);
+            position_regulator.tune(float(target_position), getUpdatePeriodUs(), getInput, setOutput);
+
+            return settings.position.pid;
         }
 
         /// Обновить регулятор
@@ -168,8 +164,8 @@ namespace pid {
 
         /// Установить мощность на драйвер по заданной скорости
         void setDriverPowerBySpeed(float speed) {
-            const float speed_error = calcSpeedError(speed);
-            const int32_t &power = int32_t(speed_regulator.calc(speed_error, getUpdatePeriodSeconds()));
+            const double delta_position_error = calcDeltaPositionError(speed);
+            const int32_t &power = int32_t(delta_position_regulator.calc(delta_position_error, getUpdatePeriodSeconds()));
             driver.setPower(power);
         }
 
@@ -187,9 +183,9 @@ namespace pid {
         }
 
         /// Расчитать ошибку позиционирования
-        float calcSpeedError(float target_speed) {
-            calculated_speed = encoder.calcSpeed(getUpdatePeriodSeconds());
-            return target_speed - calculated_speed;
+        double calcDeltaPositionError(float target_speed) {
+            target_delta_position_ticks += target_speed * getUpdatePeriodSeconds();
+            return target_delta_position_ticks - getCurrentPosition();
         }
     };
 }  // namespace pid
