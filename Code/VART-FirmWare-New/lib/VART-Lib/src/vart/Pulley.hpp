@@ -24,6 +24,7 @@ namespace vart {
 
         /// Сервопривод
         hardware::ServoMotor &servo;
+
     private:
 
         /// Настройки привода
@@ -36,6 +37,10 @@ namespace vart {
 
         explicit Pulley(const Settings &settings, hardware::ServoMotor &servo) :
             settings(settings), servo(servo) {}
+
+        inline bool isEnabled() const {
+            return servo.isEnabled();
+        }
 
         /// Задать целевую длину троса
         void setTargetRopeLength(double target_length_mm) {

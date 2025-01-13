@@ -5,6 +5,7 @@
 
 #include "hardware/Encoder.hpp"
 #include "hardware/MotorDriver.hpp"
+#include "vart/Macro.hpp"
 #include <pid/DeltaRegulator.hpp>
 
 
@@ -59,8 +60,8 @@ namespace hardware {
         /// Сервопривод включен
         bool is_enabled{false};
 
-
     public:
+
 
         explicit ServoMotor(Settings &settings, const MotorDriverL293 &driver, Encoder &encoder) :
             settings(settings),
@@ -88,6 +89,8 @@ namespace hardware {
                 disable();
             }
         }
+
+        inline bool isEnabled() const { return is_enabled; }
 
         /// Установить новую целевую позицию
         void setTargetPosition(int32_t new_target_position_ticks) {
@@ -138,14 +141,13 @@ namespace hardware {
             };
 
             const pid::PidSettings &ret = delta_position_regulator.tune(target_position, getInput, setOutput, getUpdatePeriodUs());
-
+            logPid(ret);
             disable();
 
             return ret;
         }
 
         const pid::PidSettings &tunePositionRegulator(int32_t target_position) {
-            enable();
 
             const auto getInput = [this]() -> float {
                 return float(this->getCurrentPosition());
@@ -155,13 +157,18 @@ namespace hardware {
                 this->setDriverPowerBySpeed(speed);
             };
 
+            enable();
             beginMove();
 
             position_regulator.tune(float(target_position), getUpdatePeriodUs(), getInput, setOutput);
 
             disable();
 
-            return position_regulator.settings.pid;
+            const pid::PidSettings &ret = position_regulator.settings.pid;
+
+            logPid(ret);
+
+            return ret;
         }
 
         /// Обновить регулятор

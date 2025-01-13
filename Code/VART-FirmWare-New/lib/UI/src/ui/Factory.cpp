@@ -45,4 +45,20 @@ ui::Widget *ui::spinBoxF(float *value, float step, float max, float min, std::fu
     ))->setStyle(ui::Style::triangle_framed);
 }
 
+ui::Widget *ui::checkBoxRaw(const char *on_true, const char *on_false, const std::function<void(bool)> &on_change, bool default_value) {
+    return new Widget(
+        ui::ValueType::Chars,
+        (void *) (default_value ? on_true : on_false),
+        [on_false, on_true, &on_change](ui::Widget *w) mutable {
+            bool is_true = w->value == on_true;
+
+            if (on_change != nullptr) {
+                on_change(is_true);
+            }
+
+            w->value = const_cast<char *>(is_true ? on_false : on_true);
+        }
+    );
+}
+
 

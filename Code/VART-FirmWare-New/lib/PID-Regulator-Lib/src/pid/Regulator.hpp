@@ -87,6 +87,9 @@ namespace pid {
             auto tuner = pid::Tuner();
             tunerSetup(tuner, target, loop_period_us);
 
+            logFloat(target);
+            logFloat(loop_period_us);
+
             uint32_t next_update_us;
 
             const uint32_t end_time_ms = millis() + 20000;
@@ -102,7 +105,11 @@ namespace pid {
                 next_update_us = micros() + loop_period_us;
 
                 const float input = getInput();
+                logFloat(input);
+
                 const float output = tuner.tunePID(input, micros());
+                logFloat(output);
+
                 setOutput(output);
 
                 while (micros() < next_update_us) { delayMicroseconds(1); }

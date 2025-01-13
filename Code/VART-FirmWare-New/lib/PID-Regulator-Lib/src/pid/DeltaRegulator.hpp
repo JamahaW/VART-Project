@@ -47,7 +47,7 @@ namespace pid {
                 target += speed * settings.update_period_seconds;
             }
 
-            return int32_t(regulator.calc(target - input, period_seconds));
+            return int32_t(regulator.calc(floor(target) - input, period_seconds));
         }
 
         const PidSettings &tune(
@@ -56,7 +56,7 @@ namespace pid {
             const std::function<void(float)> &setOutput,
             uint32_t loop_period_us
         ) {
-            regulator.tune(float(target_position), loop_period_us, getInput, setOutput);
+            logFunc(regulator.tune(float(target_position), loop_period_us, getInput, setOutput));
             return settings.regulator.pid;
         }
     };

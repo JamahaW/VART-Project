@@ -11,18 +11,22 @@ namespace ui {
     Widget *display(void *value, ValueType type);
 
     Widget *spinBox(
-            int *value,
-            int step = 1,
-            std::function<void(Widget *)> on_spin = nullptr,
-            int max = 100,
-            int min = 0
+        int *value,
+        int step = 1,
+        std::function<void(Widget *)> on_spin = nullptr,
+        int max = 100,
+        int min = 0
     );
 
     Widget *spinBoxF(
-            float *value,
-            float step = 0.1F,
-            float max = 1.0F,
-            float min = 0.0F,
-            std::function<void(Widget *)> on_spin = nullptr
+        float *value,
+        float step = 0.1F,
+        float max = 1.0F,
+        float min = 0.0F,
+        std::function<void(Widget *)> on_spin = nullptr
     );
+
+    Widget *checkBoxRaw(const char *on_true, const char *on_false, const std::function<void(bool)> &on_change, bool default_value);
+
+#define ui_checkbox(name, on_change, default_v) ui::checkBoxRaw(name ": [ on ]", name ": [ off ]", on_change, default_v)
 }

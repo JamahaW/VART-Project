@@ -18,13 +18,13 @@ namespace vart {
 
         const Settings &settings;
 
+    public:
+
         Pulley &left_pulley;
         Pulley &right_pulley;
 
         uint16_t area_width_mm{settings.max_area_width};
         uint16_t area_height_mm{settings.max_area_height};
-
-    public:
 
         explicit PositionController(const Settings &settings, Pulley &left_pulley, Pulley &right_pulley) :
             settings(settings), left_pulley(left_pulley), right_pulley(right_pulley) {}
@@ -35,9 +35,23 @@ namespace vart {
             right_pulley.update();
         }
 
+        void setAreaSize(int width_mm, int height_mm) {
+            area_width_mm = constrain(width_mm, 100, settings.max_area_width);
+            area_height_mm = constrain(height_mm, 100, settings.max_area_height);
+        }
+
+        void getAreaSize(int &return_w, int &return_h) const {
+            return_w = area_width_mm;
+            return_h = area_height_mm;
+        }
+
         void setEnabled(bool enabled) {
             left_pulley.setEnabled(enabled);
             right_pulley.setEnabled(enabled);
+        }
+
+        inline bool isEnabled() const {
+            return left_pulley.isEnabled();
         }
 
         void setSpeedLimit(float mm_per_second) {

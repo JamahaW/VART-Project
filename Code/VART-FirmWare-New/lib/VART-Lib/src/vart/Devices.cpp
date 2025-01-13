@@ -17,16 +17,16 @@ static auto left_driver = MotorDriverL293(Pins::left_driver_a, Pins::left_driver
 static auto right_driver = MotorDriverL293(Pins::right_driver_a, Pins::right_driver_b);
 
 static ServoMotor::Settings servo_settings = {
-    .update_period_seconds = 128 * 1e-6,
+    .update_period_seconds = 1000 * 1e-6,
     .ready_max_abs_error = 5,
     .min_speed_limit = 80,
     .delta_position = {
         .regulator = {
             .pid = {
-                .kp = 16.1296730042,
-                .ki = 0.0492058247,
-                .kd = 2244.5698242188,
-                .abs_max_i = 204
+                .kp = 30, //3.4613900185,
+                .ki = 0.0518503077,
+                .kd = 0, //155.0851440430,
+                .abs_max_i = 255
             },
             .tuner = {
                 .mode = pid::TunerMode::no_overshoot,
@@ -34,20 +34,20 @@ static ServoMotor::Settings servo_settings = {
             },
             .abs_max_out = 255
         },
-        .update_period_seconds = 0.004,
+        .update_period_seconds = 0.001,
     },
     .position = {
         .pid = {
-            .kp = 6.2555165291,
-            .ki = 0.0105996681,
-            .kd = 2437.8041992188,
-            .abs_max_i = 640
+            .kp = 20, //6.0334749222,
+            .ki = 0.1068679616,
+            .kd = 1, //453.7068481445,
+            .abs_max_i = 480
         },
         .tuner = {
             .mode = pid::TunerMode::no_overshoot,
             .cycles = 10,
         },
-        .abs_max_out = 800
+        .abs_max_out = 600
     },
 };
 
