@@ -30,27 +30,28 @@ namespace vart {
             /// Скорость по умолчанию
             double default_speed;
 
-            /// Диапазон ускорений
-            double default_accel;
-
             /// Ускорение по умолчанию
             Range accel_range;
+
+            /// Диапазон ускорений
+            double default_accel;
         };
 
     private:
 
-        const Settings &settings;
+        /// Текущий режим работы
+        Mode mode{Mode::Immediate};
 
+        const Settings &settings;
         double speed_set{settings.default_speed};
+
         double accel_set{settings.default_accel};
+
+    public:
 
         /// Контроллер позиции
         PositionController &controller;
 
-        /// Текущий режим работы
-        Mode mode{Mode::Immediate};
-
-    public:
         explicit Planner(const Settings &settings, PositionController &controller) :
             controller(controller), settings(settings) {}
 
@@ -60,8 +61,12 @@ namespace vart {
         /// Задать ограничение скорости
         void setSpeed(double speed) { speed_set = settings.speed_range.clamp(speed); }
 
+        double getSpeed() { return speed_set; }
+
         /// Задать ограничение ускорения
         void setAccel(double accel) { accel_set = settings.accel_range.clamp(accel); }
+
+        double getAccel() { return accel_set; }
 
         /// Перейти в позицию
         void moveTo(Vector2D position) {
@@ -82,7 +87,7 @@ namespace vart {
 
         void goPosition(Vector2D target) {
             controller.setTargetPosition(target);
-            delay(1);
+            while (not controller.isReady()) { delay(1); }
         }
 
         void goConstSpeed(Vector2D target) {
@@ -98,7 +103,7 @@ namespace vart {
                 delay(1);
             }
 
-            goPosition(target);
+            controller.setTargetPosition(target);
         }
 
         void goConstAccel(Vector2D target) {
@@ -142,7 +147,7 @@ namespace vart {
                 delay(1);
             }
 
-            goPosition(target);
+            controller.setTargetPosition(target);
         }
     };
 }

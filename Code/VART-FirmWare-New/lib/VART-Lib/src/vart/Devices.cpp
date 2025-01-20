@@ -36,6 +36,9 @@ using hardware::MotorDriverL293;
 using hardware::ServoMotor;
 using vart::Pins;
 using vart::Pulley;
+using vart::PositionController;
+using vart::Area;
+using vart::Planner;
 
 static auto left_encoder = hardware::Encoder(Pins::left_encoder_a, Pins::left_encoder_b);
 
@@ -50,10 +53,10 @@ static ServoMotor::Settings servo_settings = {
     .ready_max_abs_error = 20,
     .position = {
         .pid = {
-            .kp = 9,
+            .kp = 10,
             .ki = 3,
-            .kd = 0.1,
-            .abs_max_i = 204
+            .kd = 0.2,
+            .abs_max_i = 255
         },
         .tuner = {
             .mode = pid::TunerMode::no_overshoot,
@@ -75,9 +78,6 @@ static auto left_pulley = Pulley(pulley_settings, left_servo);
 
 static auto right_pulley = Pulley(pulley_settings, right_servo);
 
-using vart::PositionController;
-using vart::Area;
-
 Area::Settings area_settings = {
     .max_area_size = {4000, 4000},
     .min_area_size = {500, 500},
@@ -86,4 +86,19 @@ Area::Settings area_settings = {
 
 static auto area = Area(area_settings);
 
-PositionController vart::position_controller = PositionController(area, left_pulley, right_pulley);
+static auto position_controller = PositionController(area, left_pulley, right_pulley);
+
+static Planner::Settings settings = {
+    .speed_range = {
+        .min = 5,
+        .max = 150
+    },
+    .default_speed = 50,
+    .accel_range = {
+        .min = 25,
+        .max = 100
+    },
+    .default_accel = 50
+};
+
+Planner vart::planner = Planner(settings, position_controller);

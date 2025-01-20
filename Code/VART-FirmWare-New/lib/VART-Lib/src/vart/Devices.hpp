@@ -3,11 +3,11 @@
 #pragma once
 
 #include "ui/Window.hpp"
-#include "PositionController.hpp"
+#include "vart/Planner.hpp"
 
 
 namespace vart {
     extern ui::Window window;
 
-    extern PositionController position_controller;
+    extern Planner planner;
 }
