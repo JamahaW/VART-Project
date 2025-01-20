@@ -47,12 +47,12 @@ static auto right_driver = MotorDriverL293(Pins::right_driver_a, Pins::right_dri
 
 static ServoMotor::Settings servo_settings = {
     .update_period_seconds = 1 * 1e-3,
-    .ready_max_abs_error = 10,
+    .ready_max_abs_error = 20,
     .position = {
         .pid = {
-            .kp = 10,
+            .kp = 9,
             .ki = 3,
-            .kd = 0.2,
+            .kd = 0.1,
             .abs_max_i = 204
         },
         .tuner = {

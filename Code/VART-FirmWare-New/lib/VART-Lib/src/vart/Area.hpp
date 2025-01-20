@@ -1,20 +1,10 @@
 #pragma once
 
 #include <cstdint>
+#include "vart/Vector2D.hpp"
 
 
 namespace vart {
-    struct Vector2D {
-        int16_t x;
-        int16_t y;
-
-        Vector2D clamp(Vector2D _min, Vector2D _max) {
-            return {
-                .x = constrain(x, _min.x, _max.x),
-                .y = constrain(y, _min.y, _max.y),
-            };
-        }
-    };
 
     /// Рабочая область
     class Area {
@@ -41,7 +31,7 @@ namespace vart {
         Vector2D current_size_mm;
 
         /// Половины размера для расчётов
-        int w{0}, h{0};
+        double w{0}, h{0};
 
     public:
 
@@ -61,8 +51,8 @@ namespace vart {
         }
 
         void updateWH(Vector2D size) {
-            w = size.x / 2;
-            h = size.y / 2;
+            w = size.x / 2.0;
+            h = size.y / 2.0;
         }
 
         /// Получить положения тросов по текущей позиции
@@ -75,8 +65,8 @@ namespace vart {
         Vector2D calcForward(double l, double r) const {
             auto x = (l - r) * (l + r) / (w * 4);
             return {
-                .x = int16_t(x),
-                .y = int16_t(h - std::sqrt((l - x - w) * (l + x + w)))
+                .x = x,
+                .y = h - std::sqrt((l - x - w) * (l + x + w))
             };
         }
     };

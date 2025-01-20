@@ -1,3 +1,6 @@
+
+#pragma  once
+
 #include "vart/Area.hpp"
 #include "vart/Pulley.hpp"
 
@@ -52,10 +55,24 @@ namespace vart {
             area.calcBackward({0, 0}, l, r);
             left_pulley.setCurrentRopeLength(l);
             right_pulley.setCurrentRopeLength(r);
+            setTargetPosition({0, 0});
+        }
+
+        Vector2D getCurrentPosition() {
+            return area.calcForward(left_pulley.getCurrentRopeLength(), right_pulley.getCurrentRopeLength());
         }
 
         uint32_t getUpdatePeriodMs() const {
             return max(left_pulley.getUpdatePeriodMs(), right_pulley.getUpdatePeriodMs());
+        }
+
+        void pullRopesIn() {
+            left_pulley.setTargetRopeLength(0);
+            right_pulley.setTargetRopeLength(0);
+        }
+
+        void pullRopesOut() {
+            setTargetPosition({0, 0});
         }
 
     };
