@@ -80,17 +80,12 @@ namespace pid {
         /// Автоматическая настройка регулятора
         void tune(
             float target,
-            uint32_t loop_period_us,
+            uint32_t loop_period_ms,
             const std::function<float()> &getInput,
             const std::function<void(float)> &setOutput
         ) {
             auto tuner = pid::Tuner();
-            tunerSetup(tuner, target, loop_period_us);
-
-            logFloat(target);
-            logFloat(loop_period_us);
-
-            uint32_t next_update_us;
+            tunerSetup(tuner, target, loop_period_ms);
 
             const uint32_t end_time_ms = millis() + 20000;
 
@@ -102,17 +97,12 @@ namespace pid {
                     break;
                 }
 
-                next_update_us = micros() + loop_period_us;
-
                 const float input = getInput();
-                logFloat(input);
-
-                const float output = tuner.tunePID(input, micros());
-                logFloat(output);
+                const float output = tuner.tunePID(input, millis());
 
                 setOutput(output);
 
-                while (micros() < next_update_us) { delayMicroseconds(1); }
+                delay(loop_period_ms);
             }
 
             settings.pid = {
@@ -123,8 +113,8 @@ namespace pid {
             };
         }
 
-        void tunerSetup(Tuner &tuner, float target, uint32_t loop_period_us) const {
-            tuner.setLoopInterval(int32_t(loop_period_us));
+        void tunerSetup(Tuner &tuner, float target, uint32_t loop_period_ms) const {
+            tuner.setLoopInterval(int32_t(loop_period_ms * 1000));
             tuner.setOutputRange(-settings.abs_max_out, settings.abs_max_out);
             tuner.setZNMode(settings.tuner.mode);
             tuner.setTuningCycles(settings.tuner.cycles);

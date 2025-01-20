@@ -1,5 +1,5 @@
+#include "vart/Area.hpp"
 #include "vart/Pulley.hpp"
-#include "Macro.hpp"
 
 
 namespace vart {
@@ -7,27 +7,16 @@ namespace vart {
     /// Контроллер положения плоттера на рабочей области
     class PositionController {
 
-    public:
-
-        struct Settings {
-            const uint16_t max_area_width;
-            const uint16_t max_area_height;
-        };
-
     private:
 
-        const Settings &settings;
-
-    public:
-
+        Area &area;
         Pulley &left_pulley;
         Pulley &right_pulley;
 
-        uint16_t area_width_mm{settings.max_area_width};
-        uint16_t area_height_mm{settings.max_area_height};
+    public:
 
-        explicit PositionController(const Settings &settings, Pulley &left_pulley, Pulley &right_pulley) :
-            settings(settings), left_pulley(left_pulley), right_pulley(right_pulley) {}
+        explicit PositionController(Area &area, Pulley &left_pulley, Pulley &right_pulley) :
+            area(area), left_pulley(left_pulley), right_pulley(right_pulley) {}
 
         /// Обновление регуляторов шкивов
         void update() {
@@ -35,28 +24,13 @@ namespace vart {
             right_pulley.update();
         }
 
-        void setAreaSize(int width_mm, int height_mm) {
-            area_width_mm = constrain(width_mm, 100, settings.max_area_width);
-            area_height_mm = constrain(height_mm, 100, settings.max_area_height);
-        }
+        void setAreaSize(Vector2D size) { area.setSize(size); }
 
-        void getAreaSize(int &return_w, int &return_h) const {
-            return_w = area_width_mm;
-            return_h = area_height_mm;
-        }
+        Vector2D getAreaSize() const { return area.getSize(); }
 
         void setEnabled(bool enabled) {
             left_pulley.setEnabled(enabled);
             right_pulley.setEnabled(enabled);
-        }
-
-        inline bool isEnabled() const {
-            return left_pulley.isEnabled();
-        }
-
-        void setSpeedLimit(float mm_per_second) {
-            left_pulley.setSpeedLimit(mm_per_second);
-            right_pulley.setSpeedLimit(mm_per_second);
         }
 
         /// Оба привода шкива достигли целевых позиций
@@ -65,39 +39,24 @@ namespace vart {
         }
 
         /// Установить целевую позицию
-        void setTargetPosition(int16_t target_x_mm, int16_t target_y_mm) {
-            double left, right;
-            calcDistance(left, right, target_x_mm, target_y_mm);
-            left_pulley.setTargetRopeLength(left);
-            right_pulley.setTargetRopeLength(right);
+        void setTargetPosition(Vector2D target) {
+            double l, r;
+            area.calcBackward(target, l, r);
+            left_pulley.setTargetRopeLength(l);
+            right_pulley.setTargetRopeLength(r);
         }
 
         /// Установить текущее положение как home
         void setCurrentPositionAsHome() {
-            double left, right;
-            calcDistance(left, right, 0, 0);
-            left_pulley.setCurrentRopeLength(left);
-            right_pulley.setCurrentRopeLength(right);
+            double l, r;
+            area.calcBackward({0, 0}, l, r);
+            left_pulley.setCurrentRopeLength(l);
+            right_pulley.setCurrentRopeLength(r);
         }
 
-        uint32_t getUpdatePeriodUs() const {
-            return left_pulley.getUpdatePeriodUs();
+        uint32_t getUpdatePeriodMs() const {
+            return max(left_pulley.getUpdatePeriodMs(), right_pulley.getUpdatePeriodMs());
         }
 
-    private:
-
-        void calcDistance(double &return_left_rope_length_mm, double &return_right_rope_length_mm, int16_t x, int16_t y) const {
-            int32_t i = area_height_mm / 2 - y;
-//            logFloat(i);
-
-            int32_t j = area_width_mm / 2;
-//            logFloat(j);
-
-            return_left_rope_length_mm = std::hypot(x + j, i);
-//            logFloat(return_left_rope_length_mm);
-
-            return_right_rope_length_mm = std::hypot(x - j, i);
-//            logFloat(return_right_rope_length_mm);
-        }
     };
 }

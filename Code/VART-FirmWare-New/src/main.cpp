@@ -1,7 +1,7 @@
 #include <Arduino.h>
-#include <cstdint>
 #include "vart/Devices.hpp"
-
+#include "vart/PositionController.hpp"
+#include "vart/Pins.hpp"
 #include "ui/Factory.hpp"
 
 
@@ -9,108 +9,78 @@
 #pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 
 
-void goTo(int16_t x, int16_t y) {
-    auto &controller = vart::position_controller;
+using hardware::MotorDriverL293;
+using hardware::ServoMotor;
+using vart::Pins;
+using vart::Pulley;
 
-    controller.setTargetPosition(x, y);
+static auto left_encoder = hardware::Encoder(Pins::left_encoder_a, Pins::left_encoder_b);
 
-    while (not controller.isReady()) {
-        delay(1);
-    }
-}
+//static auto right_encoder = hardware::Encoder(Pins::right_encoder_a, Pins::right_encoder_b);
 
-[[noreturn]] static void execDemoTask(void *) {
-    const auto len = 100;
-    float rad;
+static auto left_driver = MotorDriverL293(Pins::left_driver_a, Pins::left_driver_b);
 
-    for (int angle = 0; angle < 360; angle += 5) {
-        rad = radians(angle);
-        goTo(int16_t(len * cos(rad)), int16_t(len * sin(rad)));
-    }
+//static auto right_driver = MotorDriverL293(Pins::right_driver_a, Pins::right_driver_b);
 
-    goTo(0, 0);
+static ServoMotor::Settings servo_settings = {
+    .update_period_seconds = 1 * 1e-3,
+    .ready_max_abs_error = 10,
+    .position = {
+        .pid = {
+            .kp = 10,
+            .ki = 3,
+            .kd = 0.2,
+            .abs_max_i = 204
+        },
+        .tuner = {
+            .mode = pid::TunerMode::no_overshoot,
+            .cycles = 10,
+        },
+        .abs_max_out = 255
+    },
+};
 
-    vTaskDelete(nullptr);
+static auto left_servo = ServoMotor(servo_settings, left_driver, left_encoder);
 
-    while (true) { delay(1); }
-}
+//static auto right_servo = ServoMotor(servo_settings, right_driver, right_encoder);
 
-static void startDemoTask() {
-    xTaskCreate(execDemoTask, "demo", 4096, nullptr, 2, nullptr);
-}
+//static const Pulley::Settings pulley_settings = {
+//    .ticks_in_mm = 5000.0 / 280.0,
+//};
+//static auto left_pulley = Pulley(pulley_settings, left_servo);
+//
+//static auto right_pulley = Pulley(pulley_settings, right_servo);
+//using vart::PositionController;
+//
+//PositionController::Settings position_controller_settings = {
+//    .max_area_width = 1200,
+//    .max_area_height = 1200,
+//};
+//auto position_controller = PositionController(position_controller_settings, left_pulley, right_pulley);
 
-static void uiMedia(ui::Page *p) {
-    p->addItem(ui::button("DEMO", [](ui::Widget *) { startDemoTask(); }));
-}
-
-static void uiArea(ui::Page *p) {
-    static int32_t w, h;
-
-    vart::position_controller.getAreaSize(w, h);
-
-    p->addItem(ui::label("Width mm"));
-    p->addItem(ui::spinBox(&w, 25, nullptr, 2000, 100));
-
-    p->addItem(ui::label("Height mm"));
-    p->addItem(ui::spinBox(&h, 25, nullptr, 2000, 100));
-
-    p->addItem(ui::button("Apply", [](ui::Widget *) {
-        vart::position_controller.setAreaSize(w, h);
-    }));
-}
-
-static void uiMovement(ui::Page *p) {
-    static int32_t x = 0, y = 0;
-    static float speed = 16;
-
-    auto controller = vart::position_controller;
-
-//    p->addItem(ui_checkbox("Enable", [&controller](bool enabled) { controller.setEnabled(enabled); }, true));
-
-    p->addItem(ui::button("disable", [&controller](ui::Widget *) { controller.setEnabled(false); }));
-    p->addItem(ui::button("enable", [&controller](ui::Widget *) { controller.setEnabled(true); }));
-
-    auto pos_sub = p->addPage("Position");
-    pos_sub->addItem(ui::label("X mm"));
-    pos_sub->addItem(ui::spinBox(&x, 10, nullptr, 2000, -2000));
-    pos_sub->addItem(ui::label("Y mm"));
-    pos_sub->addItem(ui::spinBox(&y, 10, nullptr, 2000, -2000));
-    pos_sub->addItem(ui::button("Move", [&controller](ui::Widget *) {
-        controller.setTargetPosition(int16_t(x), int16_t(y));
-    }));
-
-    p->addItem(ui::label("Speed"));
-    p->addItem(ui::spinBoxF(&speed, 5, 50, 5, [&controller](ui::Widget *) {
-        controller.setSpeedLimit(speed);
-    }));
-
-    p->addItem(ui::button("Set Home", [&controller](ui::Widget *) {
-        controller.setCurrentPositionAsHome();
-        controller.setTargetPosition(0, 0);
-    }));
-
-    auto offset_sub = p->addPage("Offset");
-    offset_sub->addItem(ui::label("Offset Left"));
-    offset_sub->addItem(ui::spinBox(&controller.left_pulley.rope_offset_mm, 5, nullptr, 150, -150));
-    offset_sub->addItem(ui::label("Offset Right"));
-    offset_sub->addItem(ui::spinBox(&controller.right_pulley.rope_offset_mm, 5, nullptr, 150, -150));
-}
-
-static void uiTool(ui::Page *p) {
-    p->addItem(ui_checkbox("Enable", nullptr, true));
-}
-
-static void uiSettings(ui::Page *) {}
-
-static void uiAbout(ui::Page *) {}
 
 static void buildUI(ui::Page &p) {
-    uiMedia(p.addPage("Media"));
-    uiMovement(p.addPage("Movement"));
-    uiArea(p.addPage("Area"));
-    uiTool(p.addPage("Tool"));
-    uiSettings(p.addPage("Settings"));
-    uiAbout(p.addPage("About"));
+    static int target_position = 0;
+
+    auto spin = [](ui::Widget *) {
+        left_servo.setTargetPosition(target_position);
+    };
+
+    p.addItem(ui::spinBox(&target_position, 10, spin, 10000, -10000));
+    p.addItem(ui::spinBox(&target_position, 50, spin, 10000, -10000));
+    p.addItem(ui::spinBox(&target_position, 200, spin, 10000, -10000));
+
+    p.addItem(ui::button("enable", [](ui::Widget *) {
+        left_servo.setEnabled(true);
+    }));
+
+    p.addItem(ui::button("disable", [](ui::Widget *) {
+        left_servo.setEnabled(true);
+    }));
+
+    p.addItem(ui::spinBoxF(&left_servo.settings.position.pid.kp, 0.5, 100, 0));
+    p.addItem(ui::spinBoxF(&left_servo.settings.position.pid.ki, 0.1, 100, 0));
+    p.addItem(ui::spinBoxF(&left_servo.settings.position.pid.kd, 0.02, 100, 0));
 }
 
 [[noreturn]] static void uiTask(void *) {
@@ -121,25 +91,19 @@ static void buildUI(ui::Page &p) {
 
     while (true) {
         vart::window.update();
-        vTaskDelay(5);
+        vTaskDelay(1);
         taskYIELD();
     }
 }
 
 [[noreturn]] static void posTask(void *) {
-    vart::PositionController &pos = vart::position_controller;
+    const auto update_period_ms = left_servo.getUpdatePeriodMs();
 
     analogWriteFrequency(30000);
 
-    const uint32_t period_us = pos.getUpdatePeriodUs();
-    pos.setEnabled(true);
-
-    pos.setSpeedLimit(16);
-
     while (true) {
-        pos.update();
-//        delayMicroseconds(period_us);
-        vTaskDelay(1);
+        left_servo.update();
+        vTaskDelay(update_period_ms);
         taskYIELD();
     }
 }
@@ -154,9 +118,6 @@ void setup() {
     Serial.begin(115200);
     createStaticTask(uiTask, 4096, 1)
     createStaticTask(posTask, 4096, 1)
-
-//    vart::position_controller.left_pulley.servo.tuneDeltaPositionRegulator(10);
-//    vart::position_controller.left_pulley.servo.tunePositionRegulator(200);
 }
 
 void loop() {}

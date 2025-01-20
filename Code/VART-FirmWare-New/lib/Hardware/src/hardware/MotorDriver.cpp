@@ -9,7 +9,7 @@ hardware::MotorDriverL293::MotorDriverL293(uint8_t dir_a, uint8_t dir_b) :
     pinMode(dir_b, OUTPUT);
 }
 
-void hardware::MotorDriverL293::setPower(int power) const {
+void hardware::MotorDriverL293::setPower(int32_t power) const {
     const int pwm = abs(power);
     power = constrain(power, -255, 255);
     analogWrite(dir_a, (power < 0) * pwm);

@@ -73,7 +73,7 @@ auto left_servo = ServoMotor(
 
 
 void goToPosition(int32_t position, float speed) {
-    const auto update_period = left_servo.getUpdatePeriodUs();
+    const auto update_period = left_servo.getUpdatePeriodMs();
 
     logMsg("\ngoToPosition\n");
     logFloat(position);
@@ -96,7 +96,7 @@ void goToPosition(int32_t position, float speed) {
 }
 
 void goSpeed(ServoMotor &motor, float speed) {
-    const auto update_period = motor.getUpdatePeriodUs();
+    const auto update_period = motor.getUpdatePeriodMs();
 
     logMsg("\ngoSpeed\n");
     logFloat(speed);
@@ -132,7 +132,7 @@ void goSpeed(ServoMotor &motor, float speed) {
 }
 
 void goSpeedReg(ServoMotor &motor, float speed) {
-    const auto update_period = motor.getUpdatePeriodUs();
+    const auto update_period = motor.getUpdatePeriodMs();
 
     logMsg("\ngoSpeed\n");
     logFloat(speed);

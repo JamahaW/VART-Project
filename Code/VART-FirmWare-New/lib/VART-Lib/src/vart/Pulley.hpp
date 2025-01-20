@@ -38,9 +38,6 @@ namespace vart {
         explicit Pulley(const Settings &settings, hardware::ServoMotor &servo) :
             settings(settings), servo(servo) {}
 
-        inline bool isEnabled() const {
-            return servo.isEnabled();
-        }
 
         /// Задать целевую длину троса
         void setTargetRopeLength(double target_length_mm) {
@@ -52,34 +49,22 @@ namespace vart {
             servo.setCurrentPosition(calcTicks(new_length_mm));
         }
 
+        /// Получить текущую длину троса
         double getCurrentRopeLength() const {
             return calcMM(servo.getCurrentPosition());
         }
 
         /// Управление включением
-        void setEnabled(bool enabled) {
-            servo.setEnabled(enabled);
-        }
-
-        /// Установить ограничение скорости [mm / s]
-        void setSpeedLimit(double mm_per_second) {
-            servo.setSpeedLimit(float(calcTicks(mm_per_second)));
-        }
+        void setEnabled(bool enabled) { servo.setEnabled(enabled); }
 
         /// Обновить регулятор
-        void update() {
-            servo.update();
-        }
+        void update() { servo.update(); }
 
-        /// Получить период обновления регулятора в микросекундах
-        uint32_t getUpdatePeriodUs() const {
-            return servo.getUpdatePeriodUs();
-        }
+        /// Получить период обновления в ms
+        uint32_t getUpdatePeriodMs() const { return servo.getUpdatePeriodMs(); }
 
         /// Достигнут трос заданной длины
-        bool isReady() const {
-            return servo.isReady();
-        }
+        bool isReady() const { return servo.isReady(); }
 
     private:
 
