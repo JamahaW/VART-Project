@@ -134,7 +134,7 @@ class FileMover:
     @staticmethod
     def _add_parent_catalog_path(path: Path) -> str:
         """Добавить к имени файла родительский каталог"""
-        return f"{path.parent.stem}.{path.stem}"
+        return f"{path.parent.stem}__{path.stem}"
 
     def __build_filename_transformer(self) -> Dict[Optional[str], FileNameTransformer]:
         return {

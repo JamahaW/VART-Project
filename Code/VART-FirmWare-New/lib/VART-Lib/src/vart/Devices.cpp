@@ -18,7 +18,7 @@ static auto right_driver = MotorDriverL293(Pins::right_driver_a, Pins::right_dri
 
 static ServoMotor::Settings servo_settings = {
     .update_period_seconds = 1000 * 1e-6,
-    .ready_max_abs_error = 5,
+    .ready_max_abs_error = 10, //5,
     .min_speed_limit = 80,
     .delta_position = {
         .regulator = {
@@ -47,7 +47,7 @@ static ServoMotor::Settings servo_settings = {
             .mode = pid::TunerMode::no_overshoot,
             .cycles = 10,
         },
-        .abs_max_out = 600
+        .abs_max_out = 800
     },
 };
 
@@ -99,3 +99,18 @@ ui::Window vart::window = ui::Window(display, []() -> ui::Event {
 
     return Event::idle;
 });
+
+static auto servo = Servo();
+
+static hardware::ServoController servo_controller{
+    .servo = servo,
+    .pin = Pins::tool_servo,
+};
+//
+//vart::ToolController vart::tool_controller = vart::ToolController(servo_controller, {
+//    0,
+//    0,
+//    0,
+//    0
+//});
+

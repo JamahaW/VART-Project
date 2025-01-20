@@ -9,7 +9,9 @@
 #pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 
 
-void goTo(vart::PositionController &controller, int16_t x, int16_t y) {
+void goTo(int16_t x, int16_t y) {
+    auto &controller = vart::position_controller;
+
     controller.setTargetPosition(x, y);
 
     while (not controller.isReady()) {
@@ -17,7 +19,29 @@ void goTo(vart::PositionController &controller, int16_t x, int16_t y) {
     }
 }
 
-static void uiMedia(ui::Page *) {}
+[[noreturn]] static void execDemoTask(void *) {
+    const auto len = 100;
+    float rad;
+
+    for (int angle = 0; angle < 360; angle += 5) {
+        rad = radians(angle);
+        goTo(int16_t(len * cos(rad)), int16_t(len * sin(rad)));
+    }
+
+    goTo(0, 0);
+
+    vTaskDelete(nullptr);
+
+    while (true) { delay(1); }
+}
+
+static void startDemoTask() {
+    xTaskCreate(execDemoTask, "demo", 4096, nullptr, 2, nullptr);
+}
+
+static void uiMedia(ui::Page *p) {
+    p->addItem(ui::button("DEMO", [](ui::Widget *) { startDemoTask(); }));
+}
 
 static void uiArea(ui::Page *p) {
     static int32_t w, h;
@@ -56,7 +80,7 @@ static void uiMovement(ui::Page *p) {
     }));
 
     p->addItem(ui::label("Speed"));
-    p->addItem(ui::spinBoxF(&speed, 2, 32, 4, [&controller](ui::Widget *) {
+    p->addItem(ui::spinBoxF(&speed, 5, 50, 5, [&controller](ui::Widget *) {
         controller.setSpeedLimit(speed);
     }));
 
