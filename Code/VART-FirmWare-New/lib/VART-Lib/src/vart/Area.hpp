@@ -19,6 +19,8 @@ namespace vart {
     /// Рабочая область
     class Area {
 
+    public:
+
         /// Настройки рабочей области
         struct Settings {
             /// Максимальный размер рабочей области
@@ -32,6 +34,7 @@ namespace vart {
         };
 
     private:
+
         const Settings &settings;
 
         /// Текущий размер рабочей области
@@ -44,7 +47,9 @@ namespace vart {
 
         explicit Area(const Settings &settings) :
             settings(settings),
-            current_size_mm(settings.default_area_size) {}
+            current_size_mm(settings.default_area_size) {
+            updateWH(current_size_mm);
+        }
 
         /// Получить размер рабочей области
         Vector2D getSize() const { return current_size_mm; }
@@ -52,8 +57,12 @@ namespace vart {
         /// Установить новый размер рабочей области
         void setSize(Vector2D new_size) {
             current_size_mm = new_size.clamp(settings.min_area_size, settings.max_area_size);
-            w = new_size.x / 2;
-            h = new_size.y / 2;
+            updateWH(new_size);
+        }
+
+        void updateWH(Vector2D size) {
+            w = size.x / 2;
+            h = size.y / 2;
         }
 
         /// Получить положения тросов по текущей позиции
