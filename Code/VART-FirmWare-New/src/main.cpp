@@ -16,11 +16,11 @@ using vart::Pulley;
 
 static auto left_encoder = hardware::Encoder(Pins::left_encoder_a, Pins::left_encoder_b);
 
-//static auto right_encoder = hardware::Encoder(Pins::right_encoder_a, Pins::right_encoder_b);
+static auto right_encoder = hardware::Encoder(Pins::right_encoder_a, Pins::right_encoder_b);
 
 static auto left_driver = MotorDriverL293(Pins::left_driver_a, Pins::left_driver_b);
 
-//static auto right_driver = MotorDriverL293(Pins::right_driver_a, Pins::right_driver_b);
+static auto right_driver = MotorDriverL293(Pins::right_driver_a, Pins::right_driver_b);
 
 static ServoMotor::Settings servo_settings = {
     .update_period_seconds = 1 * 1e-3,
@@ -42,14 +42,15 @@ static ServoMotor::Settings servo_settings = {
 
 static auto left_servo = ServoMotor(servo_settings, left_driver, left_encoder);
 
-//static auto right_servo = ServoMotor(servo_settings, right_driver, right_encoder);
+static auto right_servo = ServoMotor(servo_settings, right_driver, right_encoder);
 
-//static const Pulley::Settings pulley_settings = {
-//    .ticks_in_mm = 5000.0 / 280.0,
-//};
-//static auto left_pulley = Pulley(pulley_settings, left_servo);
-//
-//static auto right_pulley = Pulley(pulley_settings, right_servo);
+static const Pulley::Settings pulley_settings = {
+    .ticks_in_mm = 5000.0 / 280.0,
+};
+
+static auto left_pulley = Pulley(pulley_settings, left_servo);
+
+static auto right_pulley = Pulley(pulley_settings, right_servo);
 //using vart::PositionController;
 //
 //PositionController::Settings position_controller_settings = {
@@ -63,24 +64,22 @@ static void buildUI(ui::Page &p) {
     static int target_position = 0;
 
     auto spin = [](ui::Widget *) {
-        left_servo.setTargetPosition(target_position);
+        left_pulley.setTargetRopeLength(target_position);
+        right_pulley.setTargetRopeLength(target_position);
     };
 
-    p.addItem(ui::spinBox(&target_position, 10, spin, 10000, -10000));
-    p.addItem(ui::spinBox(&target_position, 50, spin, 10000, -10000));
-    p.addItem(ui::spinBox(&target_position, 200, spin, 10000, -10000));
+    p.addItem(ui::spinBox(&target_position, 100, spin, 10000, -10000));
+    p.addItem(ui::spinBox(&target_position, 1, spin, 10000, -10000));
 
     p.addItem(ui::button("enable", [](ui::Widget *) {
-        left_servo.setEnabled(true);
+        left_pulley.setEnabled(true);
+        right_pulley.setEnabled(true);
     }));
 
     p.addItem(ui::button("disable", [](ui::Widget *) {
-        left_servo.setEnabled(true);
+        left_pulley.setEnabled(false);
+        right_pulley.setEnabled(false);
     }));
-
-    p.addItem(ui::spinBoxF(&left_servo.settings.position.pid.kp, 0.5, 100, 0));
-    p.addItem(ui::spinBoxF(&left_servo.settings.position.pid.ki, 0.1, 100, 0));
-    p.addItem(ui::spinBoxF(&left_servo.settings.position.pid.kd, 0.02, 100, 0));
 }
 
 [[noreturn]] static void uiTask(void *) {
@@ -102,7 +101,8 @@ static void buildUI(ui::Page &p) {
     analogWriteFrequency(30000);
 
     while (true) {
-        left_servo.update();
+        left_pulley.update();
+        right_pulley.update();
         vTaskDelay(update_period_ms);
         taskYIELD();
     }
