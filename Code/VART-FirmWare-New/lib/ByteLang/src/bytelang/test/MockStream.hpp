@@ -33,6 +33,8 @@ namespace bytelang {
 
             /// Сколько ещё можно записать байт
             int availableForWrite() override { return 0; }
+
+            void reset() { input.reset(); }
         };
     }
 }

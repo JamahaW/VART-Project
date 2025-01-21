@@ -21,7 +21,10 @@ namespace vart {
         MarkerPrintTool &tool;
 
         /// Прогресс печати
-        uint8_t progress;
+        int progress;
+
+        /// Код завершения печати
+        int quit_code;
     };
 
     extern VartContext context;

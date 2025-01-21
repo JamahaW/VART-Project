@@ -1,6 +1,7 @@
 #include "vart/Devices.hpp"
 #include "vart/util/Pins.hpp"
 #include "gfx/OLED.hpp"
+#include "EncButton.h"
 
 
 using ui::Window;

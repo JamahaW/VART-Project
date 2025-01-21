@@ -1,5 +1,8 @@
 #pragma once
 
+#include <Arduino.h>
+
+
 namespace vart {
 
     /// Двухмерный вектор

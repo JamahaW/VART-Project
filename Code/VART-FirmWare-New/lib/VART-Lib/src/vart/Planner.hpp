@@ -91,13 +91,13 @@ namespace vart {
             is_ready = false;
 
             switch (mode) {
-                case Position:
+                case Mode::Position:
                     goPosition(position);
                     break;
-                case Speed:
+                case Mode::Speed:
                     goConstSpeed(position);
                     break;
-                case Accel:
+                case Mode::Accel:
                     goConstAccel(position);
                     break;
             }

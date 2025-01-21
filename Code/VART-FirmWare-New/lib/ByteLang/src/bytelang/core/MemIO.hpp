@@ -46,6 +46,8 @@ namespace bytelang {
                     *cursor++ = value;
                 }
             }
+
+            void reset() { cursor = (uint8_t *) (begin); }
         };
     }
 }

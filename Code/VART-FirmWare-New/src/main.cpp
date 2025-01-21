@@ -60,81 +60,53 @@ static void servicePage(ui::Page *p) {
     p->addItem(ui::spinBox(&r, 5, on_spin, 100, -100));
 }
 
-[[noreturn]] static void bytecodeExecute(void *) {
-    using bytelang::core::MemIO;
+static ui::Page *printing_page = nullptr;
 
-    logMsg("bytecodeExecute begin\n");
+static ui::Page *after_print = nullptr;
 
-    static bytelang::primitive::u8 buf[] = {
-        0x01, 0x01, 0xE8, 0x03, 0x02, 0x64, 0x03, 0xC8, 0x04, 0x00, 0x04, 0x01, 0x04, 0x02, 0x05, 0x00, 0x00, 0x00, 0x00, 0x05, 0xE8, 0x03, 0xE8, 0x03, 0x05, 0x18, 0xFC, 0x18, 0xFC, 0x06, 0x00, 0x06,
-        0x32, 0x06, 0x64, 0x07, 0x00, 0x07, 0x01, 0x07, 0x02, 0x00
-    };
-    logMsg("Buffer created\n");
+[[noreturn]] static void bytecodeExecuteTask(void *v) {
+    auto &stream = *(bytelang::test::MockStream *) v;
 
-    auto stream = bytelang::test::MockStream(MemIO(buf, sizeof(buf)));
-    logMsg("Stream created\n");
+    vart::window.setPage(printing_page);
 
-    logMsg("BEGIN vart::interpreter.run\n");
-    auto ret = vart::interpreter.run(stream, vart::context);
-    logInt(ret);
-    logMsg("END vart::interpreter.run\n");
+    vart::context.quit_code = vart::interpreter.run(stream, vart::context);
 
-    logMsg("bytecodeExecute end\n");
+    vart::window.setPage(after_print);
 
     vTaskDelete(nullptr);
     while (true) { delay(1); }
 }
 
 static void execStart(ui::Widget *) {
-    xTaskCreate(bytecodeExecute, "BL", 4096, nullptr, 1, nullptr);
+    static bytelang::primitive::u8 buf[] = {
+        0x01, 0x01, 0xE8, 0x03, 0x02, 0x64, 0x03, 0x4B, 0x07, 0x00, 0x07, 0x01, 0x07, 0x02, 0x07, 0x01, 0x07, 0x00, 0x04, 0x02, 0x05, 0x64, 0x00, 0x00, 0x00, 0x05, 0x9C, 0xFF, 0x00, 0x00, 0x05, 0x00,
+        0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x64, 0x00, 0x05, 0x00, 0x00, 0x9C, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x00, 0x01, 0xE8, 0x03, 0x00
+    };
+
+    static bytelang::test::MockStream stream(bytelang::core::MemIO(buf, sizeof(buf)));
+    stream.reset();
+
+    xTaskCreate(bytecodeExecuteTask, "BL", 4096, &stream, 1, nullptr);
 };
 
 static void testsPage(ui::Page *p) {
-    static int size = 200;
-    auto &planner = vart::context.planner;
-    auto &tool = vart::context.tool;
-
-    p->addItem(ui::spinBox(&size, 25, nullptr, 500, 0));
-    p->addItem(ui::button("DemoRect", [&planner, &tool](ui::Widget *) {
-        const auto s = double(size);
-
-        planner.setMode(M::Accel);
-
-        tool.setActiveTool(Marker::None);
-        planner.moveTo((const vart::Vector2D) {s, s});
-
-        tool.setActiveTool(Marker::Left);
-        planner.moveTo((const vart::Vector2D) {-s, s});
-        planner.moveTo((const vart::Vector2D) {-s, -s});
-        planner.moveTo((const vart::Vector2D) {s, -s});
-        planner.moveTo((const vart::Vector2D) {s, s});
-
-        tool.setActiveTool(Marker::None);
-        planner.moveTo((const vart::Vector2D) {0, 0});
-    }));
-    p->addItem(ui::button("DemoCircle", [&planner, &tool](ui::Widget *) {
-        const auto r = double(size);
-        double x, y;
-
-        planner.setMode(M::Accel);
-        tool.setActiveTool(Marker::None);
-        planner.moveTo((const vart::Vector2D) {r, 0});
-
-        planner.setMode(M::Speed);
-        tool.setActiveTool(Marker::Left);
-
-        for (int deg = 1; deg <= 360; deg += 1) {
-            x = r * std::cos(radians(deg));
-            y = r * std::sin(radians(deg));
-            planner.moveTo((const vart::Vector2D) {x, y});
-        }
-
-        planner.setMode(M::Accel);
-        tool.setActiveTool(Marker::None);
-        planner.moveTo((const vart::Vector2D) {0, 0});
-    }));
-
     p->addItem(ui::button("Execute", execStart));
+}
+
+static void printingPage(ui::Page *p) {
+    p->addItem(ui::button("ABORT", [](ui::Widget *) { vart::interpreter.abort(); }));
+    p->addItem(ui::button("PAUSE", [](ui::Widget *) { vart::interpreter.setPaused(true); }));
+    p->addItem(ui::button("RESUME", [](ui::Widget *) { vart::interpreter.setPaused(false); }));
+
+    p->addItem(ui::label("Progress"));
+    p->addItem(ui::display(&vart::context.progress, ui::ValueType::Integer));
+}
+
+static void afterPrint(ui::Page *p) {
+    p->addItem(ui::button("TO MAIN", [](ui::Widget *) { vart::window.setPage(&vart::window.main_page); }));
+
+    p->addItem(ui::label("QUIT_CODE"));
+    p->addItem(ui::display(&vart::context.quit_code, ui::ValueType::Integer));
 }
 
 static void markerToolPage(ui::Page *p) {
@@ -161,6 +133,12 @@ static void buildUI(ui::Page &p) {
     movementPage(p.addPage("Movement"));
     markerToolPage(p.addPage("MarkerTool"));
     testsPage(p.addPage("Tests"));
+
+    printing_page = new ui::Page(vart::window, "Printing...");
+    printingPage(printing_page);
+
+    after_print = new ui::Page(vart::window, "Printing End");
+    afterPrint(after_print);
 }
 
 [[noreturn]] static void uiTask(void *) {
@@ -168,6 +146,8 @@ static void buildUI(ui::Page &p) {
 
     ui::Page &page = vart::window.main_page;
     buildUI(page);
+
+    vart::window.render();
 
     while (true) {
         vart::window.update();
@@ -198,10 +178,8 @@ static void buildUI(ui::Page &p) {
 
 void setup() {
     Serial.begin(115200);
-//    createStaticTask(uiTask, 4096, 1)
-//    createStaticTask(posTask, 4096, 1)
-
-    execStart(nullptr);
+    createStaticTask(uiTask, 4096, 1)
+    createStaticTask(posTask, 4096, 1)
 }
 
 void loop() {}

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <functional>
-#include <EncButton.h>
 
 
 #include <ui/Page.hpp>
@@ -20,10 +19,24 @@ namespace ui {
         Page main_page;
         Page *current_page{};
 
-        explicit Window(gfx::OLED &display, std::function<Event()> &&input_handler);
+        explicit Window(gfx::OLED &display, std::function<Event()> &&input_handler) :
+            display(display), main_page(*this, "Main"), current_page(&main_page), input_handler(input_handler) {
+        }
 
-        void update();
+        void update() {
+            if (current_page->handleInput(input_handler())) {
+                render();
+            }
+        }
 
-        void setPage(Page *new_page);
+        void render() { current_page->render(display); }
+
+        void setPage(Page *new_page) {
+            current_page = new_page;
+            display.clear();
+            render();
+        }
     };
+
+
 }
