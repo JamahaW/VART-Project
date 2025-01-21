@@ -4,6 +4,8 @@
 #include "Reader.hpp"
 #include "primitives.hpp"
 
+#include "vart/util/Macro.hpp"
+
 
 namespace bytelang {
 
@@ -69,7 +71,6 @@ namespace bytelang {
                 reader_result = reader.read(instruction_code);
 
                 if (reader_result == Reader::Result::Fail) { return Result::InstructionCodeReadError; }
-
                 if (instruction_code > instruction_count) { return Result::InvalidInstructionCode; }
 
                 instruction_result = instruction_table[instruction_code](reader, context);

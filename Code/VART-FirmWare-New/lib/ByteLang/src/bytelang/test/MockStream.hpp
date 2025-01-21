@@ -5,7 +5,7 @@
 #include "bytelang/core/MemIO.hpp"
 
 
-namespace serialcmd {
+namespace bytelang {
     namespace test {
 
         /// Реализация-Затычка Stream для тестирования
@@ -16,14 +16,11 @@ namespace serialcmd {
             /// Поток ввода
             core::MemIO input;
 
-            /// Поток вывода
-            core::MemIO output;
-
-            explicit MockStream(core::MemIO &&input, core::MemIO &&output) :
-                input(input), output(output) {}
+            explicit MockStream(core::MemIO &&input) :
+                input(input) {}
 
             /// Получить количество доступных для чтения байт
-            int available() override { return this->input.getAvailableSize(); }
+            int available() override { return int(input.getAvailableSize()); }
 
             /// Считать байт (-1 если не удалось)
             int read() override { return input.isAvailable() ? input.read() : -1; }
@@ -32,13 +29,10 @@ namespace serialcmd {
             int peek() override { return input.peek(); }
 
             /// Отправить байт
-            size_t write(uint8_t value) override {
-                output.write(value);
-                return 1;
-            }
+            size_t write(uint8_t value) override { return 0; }
 
             /// Сколько ещё можно записать байт
-            int availableForWrite() override { return output.getAvailableSize(); }
+            int availableForWrite() override { return 0; }
         };
     }
 }

@@ -9,13 +9,16 @@
   logMsg(#x " = "); \
   Serial.println(x, 10)
 
+#define logInt(x) \
+    logMsg(#x " = "); \
+    Serial.println(x);
+
 #define logPid(pid)      \
   logMsg(#pid "\n");     \
-  logFloat(pid.kp);      \
-  logFloat(pid.ki);      \
-  logFloat(pid.kd);      \
-  logFloat(pid.abs_max_i)
-
+  logFloat((pid).kp);      \
+  logFloat((pid).ki);      \
+  logFloat((pid).kd);      \
+  logFloat((pid).abs_max_i)
 
 #define logFunc(fn) logMsg(#fn " : Begin\n"); fn; logMsg(#fn " : End\n")
 

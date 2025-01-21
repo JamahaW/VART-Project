@@ -3,18 +3,16 @@
 
 #include "ui/Factory.hpp"
 
+#include "bytelang/test/MockStream.hpp"
+
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 
 
-static void goTo(const vart::Vector2D target) { vart::context.planner.moveTo(target); }
-
 using M = vart::Planner::Mode;
 
 using Marker = vart::MarkerPrintTool::Marker;
-
-static void setTool(Marker marker) { vart::context.tool.setActiveTool(marker); }
 
 static void movementPage(ui::Page *p) {
     static int tx = 0, ty = 0;
@@ -22,7 +20,7 @@ static void movementPage(ui::Page *p) {
     page->addItem(ui::button( #mode, [](ui::Widget *) { vart::context.planner.setMode(mode); }))
 
     p->addItem(ui::button("Move", [](ui::Widget *) {
-        goTo({double(tx), double(ty)});
+        vart::context.planner.moveTo((const vart::Vector2D) {double(tx), double(ty)});
     }));
 
     p->addItem(ui::spinBox(&tx, 50, nullptr, 600, -600));
@@ -62,49 +60,81 @@ static void servicePage(ui::Page *p) {
     p->addItem(ui::spinBox(&r, 5, on_spin, 100, -100));
 }
 
+[[noreturn]] static void bytecodeExecute(void *) {
+    using bytelang::core::MemIO;
+
+    logMsg("bytecodeExecute begin\n");
+
+    static bytelang::primitive::u8 buf[] = {
+        0x01, 0x01, 0xE8, 0x03, 0x02, 0x64, 0x03, 0xC8, 0x04, 0x00, 0x04, 0x01, 0x04, 0x02, 0x05, 0x00, 0x00, 0x00, 0x00, 0x05, 0xE8, 0x03, 0xE8, 0x03, 0x05, 0x18, 0xFC, 0x18, 0xFC, 0x06, 0x00, 0x06,
+        0x32, 0x06, 0x64, 0x07, 0x00, 0x07, 0x01, 0x07, 0x02, 0x00
+    };
+    logMsg("Buffer created\n");
+
+    auto stream = bytelang::test::MockStream(MemIO(buf, sizeof(buf)));
+    logMsg("Stream created\n");
+
+    logMsg("BEGIN vart::interpreter.run\n");
+    auto ret = vart::interpreter.run(stream, vart::context);
+    logInt(ret);
+    logMsg("END vart::interpreter.run\n");
+
+    logMsg("bytecodeExecute end\n");
+
+    vTaskDelete(nullptr);
+    while (true) { delay(1); }
+}
+
+static void execStart(ui::Widget *) {
+    xTaskCreate(bytecodeExecute, "BL", 4096, nullptr, 1, nullptr);
+};
+
 static void testsPage(ui::Page *p) {
     static int size = 200;
-    p->addItem(ui::spinBox(&size, 25, nullptr, 500, 0));
+    auto &planner = vart::context.planner;
+    auto &tool = vart::context.tool;
 
-    p->addItem(ui::button("DemoRect", [](ui::Widget *) {
+    p->addItem(ui::spinBox(&size, 25, nullptr, 500, 0));
+    p->addItem(ui::button("DemoRect", [&planner, &tool](ui::Widget *) {
         const auto s = double(size);
 
-        vart::context.planner.setMode(M::Accel);
+        planner.setMode(M::Accel);
 
-        setTool(Marker::None);
-        goTo({s, s});
+        tool.setActiveTool(Marker::None);
+        planner.moveTo((const vart::Vector2D) {s, s});
 
-        setTool(Marker::Left);
-        goTo({-s, s});
-        goTo({-s, -s});
-        goTo({s, -s});
-        goTo({s, s});
+        tool.setActiveTool(Marker::Left);
+        planner.moveTo((const vart::Vector2D) {-s, s});
+        planner.moveTo((const vart::Vector2D) {-s, -s});
+        planner.moveTo((const vart::Vector2D) {s, -s});
+        planner.moveTo((const vart::Vector2D) {s, s});
 
-        setTool(Marker::None);
-        goTo({0, 0});
+        tool.setActiveTool(Marker::None);
+        planner.moveTo((const vart::Vector2D) {0, 0});
     }));
-
-    p->addItem(ui::button("DemoCircle", [](ui::Widget *) {
+    p->addItem(ui::button("DemoCircle", [&planner, &tool](ui::Widget *) {
         const auto r = double(size);
         double x, y;
 
-        vart::context.planner.setMode(M::Accel);
-        setTool(Marker::None);
-        goTo({r, 0});
+        planner.setMode(M::Accel);
+        tool.setActiveTool(Marker::None);
+        planner.moveTo((const vart::Vector2D) {r, 0});
 
-        vart::context.planner.setMode(M::Speed);
-        setTool(Marker::Left);
+        planner.setMode(M::Speed);
+        tool.setActiveTool(Marker::Left);
 
         for (int deg = 1; deg <= 360; deg += 1) {
             x = r * std::cos(radians(deg));
             y = r * std::sin(radians(deg));
-            goTo({x, y});
+            planner.moveTo((const vart::Vector2D) {x, y});
         }
 
-        vart::context.planner.setMode(M::Accel);
-        setTool(Marker::None);
-        goTo({0, 0});
+        planner.setMode(M::Accel);
+        tool.setActiveTool(Marker::None);
+        planner.moveTo((const vart::Vector2D) {0, 0});
     }));
+
+    p->addItem(ui::button("Execute", execStart));
 }
 
 static void markerToolPage(ui::Page *p) {
@@ -168,8 +198,10 @@ static void buildUI(ui::Page &p) {
 
 void setup() {
     Serial.begin(115200);
-    createStaticTask(uiTask, 4096, 1)
-    createStaticTask(posTask, 4096, 1)
+//    createStaticTask(uiTask, 4096, 1)
+//    createStaticTask(posTask, 4096, 1)
+
+    execStart(nullptr);
 }
 
 void loop() {}

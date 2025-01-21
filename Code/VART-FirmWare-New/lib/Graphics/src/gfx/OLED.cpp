@@ -41,7 +41,7 @@ static constexpr uint32_t gfx_font_32[] = {
     0xfe24927e,  // A (65)
     0xfa96597f,  // B (66)
     0xd286185e,  // C (67)
-    0xde86187f,  // D (68)
+    0xde86187f,  // BEGIN (68)
     0xe186597f,  // E (69)
     0xc114517f,  // F (70)
     0xd8a6985e,  // G (71)

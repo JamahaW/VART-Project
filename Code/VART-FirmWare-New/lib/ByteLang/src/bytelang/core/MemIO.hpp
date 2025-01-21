@@ -3,7 +3,7 @@
 #include "Arduino.h"
 
 
-namespace serialcmd {
+namespace bytelang {
     namespace core {
 
         /// Обёртка для IO операций над памятью
