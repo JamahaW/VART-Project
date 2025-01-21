@@ -11,9 +11,13 @@ namespace vart {
     class PositionController {
 
     private:
-
+        /// Рабочая область
         Area &area;
+
+        /// Левый привод шкива
         Pulley &left_pulley;
+
+        /// Правый привод шкива
         Pulley &right_pulley;
 
     public:
@@ -27,10 +31,13 @@ namespace vart {
             right_pulley.update();
         }
 
+        /// Установить размер рабочей области
         void setAreaSize(Vector2D size) { area.setSize(size); }
 
+        /// Получить текущий размер рабочей области
         Vector2D getAreaSize() const { return area.getSize(); }
 
+        /// Включить регуляторы
         void setEnabled(bool enabled) {
             left_pulley.setEnabled(enabled);
             right_pulley.setEnabled(enabled);
@@ -58,21 +65,31 @@ namespace vart {
             setTargetPosition({0, 0});
         }
 
+        /// Расчитать текущее положение
         Vector2D getCurrentPosition() {
             return area.calcForward(left_pulley.getCurrentRopeLength(), right_pulley.getCurrentRopeLength());
         }
 
+        /// Получить период обновления системы
         uint32_t getUpdatePeriodMs() const {
             return max(left_pulley.getUpdatePeriodMs(), right_pulley.getUpdatePeriodMs());
         }
 
+        /// Втянуть тросы
         void pullRopesIn() {
             left_pulley.setTargetRopeLength(0);
             right_pulley.setTargetRopeLength(0);
         }
 
+        /// Вытянуть тросы, чтобы оказаться в центре рабочей области
         void pullRopesOut() {
             setTargetPosition({0, 0});
+        }
+
+        /// Установить смещения тросов
+        void setOffsets(int32_t left, int32_t right) {
+            left_pulley.rope_offset_mm = left;
+            right_pulley.rope_offset_mm = right;
         }
 
     };

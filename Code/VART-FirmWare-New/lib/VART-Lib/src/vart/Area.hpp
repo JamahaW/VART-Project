@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include "vart/Vector2D.hpp"
+#include "vart/util/Vector2D.hpp"
 
 
 namespace vart {

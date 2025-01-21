@@ -35,17 +35,17 @@ void ui::Page::render(gfx::OLED &display) const {
 
 bool ui::Page::handleInput(ui::Event e) {
     switch (e) {
-        case Event::click:items[cursor]->onClick();
+        case Event::Click:items[cursor]->onClick();
             return true;
-        case Event::next_item:moveCursor(1);
+        case Event::NextItem:moveCursor(1);
             return true;
-        case Event::past_item:moveCursor(-1);
+        case Event::PastItem:moveCursor(-1);
             return true;
-        case Event::change_up:items[cursor]->onChange(1);
+        case Event::ChangeUp:items[cursor]->onChange(1);
             return true;
-        case Event::change_down:items[cursor]->onChange(-1);
+        case Event::ChangeDown:items[cursor]->onChange(-1);
             return true;
-        case Event::idle:
+        case Event::Idle:
         default:return false;
     }
 }

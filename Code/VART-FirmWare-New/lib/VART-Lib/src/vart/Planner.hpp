@@ -1,7 +1,7 @@
 #pragma once
 
 #include "vart/PositionController.hpp"
-#include "vart/Range.hpp"
+#include "vart/util/Range.hpp"
 
 
 namespace vart {
@@ -13,7 +13,7 @@ namespace vart {
         /// Режим работы
         enum Mode : char {
             /// По текущей позиции
-            Immediate = 0x00,
+            Position = 0x00,
 
             /// Со скоростью
             Speed = 0x01,
@@ -24,14 +24,18 @@ namespace vart {
 
         /// Настройки планировщика
         struct Settings {
+
+            /// Режим планировщика по умолчанию
+            Mode default_mode;
+
             /// Диапазон скоростей
-            Range speed_range;
+            Range<double> speed_range;
 
             /// Скорость по умолчанию
             double default_speed;
 
             /// Ускорение по умолчанию
-            Range accel_range;
+            Range<double> accel_range;
 
             /// Диапазон ускорений
             double default_accel;
@@ -39,21 +43,30 @@ namespace vart {
 
     private:
 
-        /// Текущий режим работы
-        Mode mode{Mode::Immediate};
-
         const Settings &settings;
+
+        /// Готов к следующему шагу
+        bool is_ready{false};
+
+        /// Текущий режим работы
+        Mode mode{settings.default_mode};
+
+        /// Заданная скорость
         double speed_set{settings.default_speed};
 
+        /// Заданное ускорение
         double accel_set{settings.default_accel};
-
-    public:
 
         /// Контроллер позиции
         PositionController &controller;
 
+    public:
+
         explicit Planner(const Settings &settings, PositionController &controller) :
             controller(controller), settings(settings) {}
+
+        /// Получить контроллер позиции
+        PositionController &getController() const { return controller; }
 
         /// Установить режим работы
         void setMode(Mode new_mode) { mode = new_mode; }
@@ -61,26 +74,35 @@ namespace vart {
         /// Задать ограничение скорости
         void setSpeed(double speed) { speed_set = settings.speed_range.clamp(speed); }
 
-        double getSpeed() { return speed_set; }
+        /// Получить текущую установку скорости
+        double getSpeed() const { return speed_set; }
 
         /// Задать ограничение ускорения
         void setAccel(double accel) { accel_set = settings.accel_range.clamp(accel); }
 
-        double getAccel() { return accel_set; }
+        /// Получить текущую установку ускорения
+        double getAccel() const { return accel_set; }
+
+        /// Планировщик завершил перемещение и готов к следующему
+        bool isReady() const { return is_ready; }
 
         /// Перейти в позицию
         void moveTo(Vector2D position) {
+            is_ready = false;
+
             switch (mode) {
-                case Immediate:
+                case Position:
                     goPosition(position);
-                    return;
+                    break;
                 case Speed:
                     goConstSpeed(position);
-                    return;
+                    break;
                 case Accel:
                     goConstAccel(position);
-                    return;
+                    break;
             }
+
+            is_ready = true;
         }
 
     private:

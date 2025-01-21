@@ -3,22 +3,22 @@
 namespace ui {
     enum class Event : unsigned char {
         /// Ничего не произошло
-        idle,
+        Idle,
 
         /// Клик на виджет
-        click,
+        Click,
 
         /// Выбрать следующий виджет
-        next_item,
+        NextItem,
 
         /// Выбрать предыдущий виджет
 
-        past_item,
+        PastItem,
 
         /// Изменение вверх
-        change_up,
+        ChangeUp,
 
         /// Изменение вниз
-        change_down,
+        ChangeDown,
     };
 }

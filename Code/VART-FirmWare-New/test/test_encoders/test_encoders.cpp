@@ -1,11 +1,11 @@
 #include <Arduino.h>
 
 #include "hardware/Encoder.hpp"
-#include "vart/Pins.hpp"
+#include "vart/util/Pins.hpp"
 
 
-const auto left_encoder = pid::Encoder(vart::Pins::left_encoder_a, vart::Pins::left_encoder_b);
-const auto right_encoder = pid::Encoder(vart::Pins::right_encoder_a, vart::Pins::right_encoder_b);
+const auto left_encoder = pid::Encoder(vart::Pins::LeftEncoderA, vart::Pins::LeftEncoderB);
+const auto right_encoder = pid::Encoder(vart::Pins::RightEncoderA, vart::Pins::RightEncoderB);
 
 
 void setup() {

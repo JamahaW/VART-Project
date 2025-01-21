@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-#include "vart/Pins.hpp"
+#include "vart/util/Pins.hpp"
 
 #include "hardware/Encoder.hpp"
 #include "hardware/MotorDriver.hpp"
@@ -48,14 +48,14 @@ ServoMotor::Settings servo_config = {
 
 auto left_servo = ServoMotor(
     servo_config,
-    MotorDriverL293(vart::Pins::left_driver_a, vart::Pins::left_driver_b),
-    Encoder(vart::Pins::left_encoder_a, vart::Pins::left_encoder_b)
+    MotorDriverL293(vart::Pins::LeftDriverA, vart::Pins::LeftDriverB),
+    Encoder(vart::Pins::LeftEncoderA, vart::Pins::LeftEncoderB)
 );
 
 //auto right_servo = ServoMotor(
 //    servo_config,
-//    MotorDriverL293(vart::Pins::right_driver_a, vart::Pins::right_driver_b),
-//    Encoder(vart::Pins::right_encoder_a, vart::Pins::right_encoder_b)
+//    MotorDriverL293(vart::Pins::RightDriverA, vart::Pins::RightDriverB),
+//    Encoder(vart::Pins::RightEncoderA, vart::Pins::RightEncoderB)
 //);
 
 #define logMsg(msg) Serial.print(msg)

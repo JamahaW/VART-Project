@@ -2,18 +2,18 @@
 
 #include "hardware/Encoder.hpp"
 #include "hardware/MotorDriver.hpp"
-#include "vart/Pins.hpp"
+#include "vart/util/Pins.hpp"
 
 
 using namespace hardware;
 
-const auto left_driver = MotorDriverL293(vart::Pins::left_driver_a, vart::Pins::left_driver_b);
+const auto left_driver = MotorDriverL293(vart::Pins::LeftDriverA, vart::Pins::LeftDriverB);
 
-const auto right_driver = MotorDriverL293(vart::Pins::right_driver_a, vart::Pins::right_driver_b);
+const auto right_driver = MotorDriverL293(vart::Pins::RightDriverA, vart::Pins::RightDriverB);
 
-const auto left_encoder = Encoder(vart::Pins::left_encoder_a, vart::Pins::left_encoder_b);
+const auto left_encoder = Encoder(vart::Pins::LeftEncoderA, vart::Pins::LeftEncoderB);
 
-const auto right_encoder = Encoder(vart::Pins::right_encoder_a, vart::Pins::right_encoder_b);
+const auto right_encoder = Encoder(vart::Pins::RightEncoderA, vart::Pins::RightEncoderB);
 
 
 void move(const MotorDriverL293 &driver, const Encoder &encoder, int power) {

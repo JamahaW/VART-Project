@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-#include "vart/Pins.hpp"
+#include "vart/util/Pins.hpp"
 #include "hardware/MotorDriver.hpp"
 #include "hardware/Encoder.hpp"
 #include "../../lib/PID-Regulator-Lib/src/pid/Tuner.hpp"
@@ -12,9 +12,9 @@
 
 using namespace pid;
 
-auto driver = MotorDriverL293(vart::left_driver_a, vart::left_driver_b);
+auto driver = MotorDriverL293(vart::LeftDriverA, vart::LeftDriverB);
 
-auto encoder = Encoder(vart::Pins::left_encoder_a, vart::Pins::left_encoder_b);
+auto encoder = Encoder(vart::Pins::LeftEncoderA, vart::Pins::LeftEncoderB);
 
 
 #define log(x) Serial.print(#x "="); Serial.print(x); Serial.print('\t')

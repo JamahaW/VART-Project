@@ -1,35 +1,5 @@
 #include "vart/Devices.hpp"
-#include "vart/Pins.hpp"
-#include "gfx/OLED.hpp"
-
-
-static gfx::OLED display;
-
-static EncButton encoder(vart::Pins::user_encoder_a, vart::Pins::user_encoder_b, vart::Pins::user_encoder_button);
-
-ui::Window vart::window = ui::Window(display, []() -> ui::Event {
-    using ui::Event;
-
-    encoder.tick();
-
-    if (encoder.left()) {
-        return Event::next_item;
-    }
-    if (encoder.right()) {
-        return Event::past_item;
-    }
-    if (encoder.click()) {
-        return Event::click;
-    }
-    if (encoder.leftH()) {
-        return Event::change_up;
-    }
-    if (encoder.rightH()) {
-        return Event::change_down;
-    }
-
-    return Event::idle;
-});
+#include "vart/util/Pins.hpp"
 
 
 using hardware::MotorDriverL293;
@@ -40,13 +10,13 @@ using vart::PositionController;
 using vart::Area;
 using vart::Planner;
 
-static auto left_encoder = hardware::Encoder(Pins::left_encoder_a, Pins::left_encoder_b);
+static auto left_encoder = hardware::Encoder(Pins::LeftEncoderA, Pins::LeftEncoderB);
 
-static auto right_encoder = hardware::Encoder(Pins::right_encoder_a, Pins::right_encoder_b);
+static auto right_encoder = hardware::Encoder(Pins::RightEncoderA, Pins::RightEncoderB);
 
-static auto left_driver = MotorDriverL293(Pins::left_driver_a, Pins::left_driver_b);
+static auto left_driver = MotorDriverL293(Pins::LeftDriverA, Pins::LeftDriverB);
 
-static auto right_driver = MotorDriverL293(Pins::right_driver_a, Pins::right_driver_b);
+static auto right_driver = MotorDriverL293(Pins::RightDriverA, Pins::RightDriverB);
 
 static ServoMotor::Settings servo_settings = {
     .update_period_seconds = 1 * 1e-3,
@@ -89,6 +59,7 @@ static auto area = Area(area_settings);
 static auto position_controller = PositionController(area, left_pulley, right_pulley);
 
 static Planner::Settings settings = {
+    .default_mode = Planner::Mode::Position,
     .speed_range = {
         .min = 5,
         .max = 150
