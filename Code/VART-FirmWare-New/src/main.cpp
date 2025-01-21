@@ -1,9 +1,15 @@
 #include <Arduino.h>
+
+
+#define  FS_NO_GLOBALS
+
+#include <SPIFFS.h>
 #include "vart/Devices.hpp"
 
 #include "ui/Factory.hpp"
 
 #include "bytelang/test/MockStream.hpp"
+#include "ui/FileWidget.hpp"
 
 
 #pragma clang diagnostic push
@@ -64,6 +70,8 @@ static ui::Page *printing_page = nullptr;
 
 static ui::Page *after_print = nullptr;
 
+static void startPrintingTask(Stream &stream);
+
 [[noreturn]] static void bytecodeExecuteTask(void *v) {
     auto &stream = *(bytelang::test::MockStream *) v;
 
@@ -77,20 +85,52 @@ static ui::Page *after_print = nullptr;
     while (true) { delay(1); }
 }
 
-static void execStart(ui::Widget *) {
-    static bytelang::primitive::u8 buf[] = {
-        0x01, 0x01, 0xE8, 0x03, 0x02, 0x64, 0x03, 0x4B, 0x07, 0x00, 0x07, 0x01, 0x07, 0x02, 0x07, 0x01, 0x07, 0x00, 0x04, 0x02, 0x05, 0x64, 0x00, 0x00, 0x00, 0x05, 0x9C, 0xFF, 0x00, 0x00, 0x05, 0x00,
-        0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x64, 0x00, 0x05, 0x00, 0x00, 0x9C, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x00, 0x01, 0xE8, 0x03, 0x00
-    };
+static void startPrintingTask(Stream &stream) { xTaskCreate(bytecodeExecuteTask, "BL", 4096, &stream, 1, nullptr); };
 
-    static bytelang::test::MockStream stream(bytelang::core::MemIO(buf, sizeof(buf)));
-    stream.reset();
+static void uiSelectFile(ui::Page *p, fs::FS &file_sys) {
+    p->addItem(ui::button("RELOAD LIST", [p, &file_sys](ui::Widget *w) {
+        p->clearItems();
+        p->addItem(w);
 
-    xTaskCreate(bytecodeExecuteTask, "BL", 4096, &stream, 1, nullptr);
-};
+        fs::File root = file_sys.open("/");
+
+        if (not root) {
+            return;
+        }
+
+        fs::File file = root.openNextFile();
+
+        while (file) {
+            if (not file.isDirectory()) {
+                p->addItem(new ui::FileWidget(file, [](ui::Widget *w) {
+                    Serial.println((const char *) w->value);
+                }));
+            }
+
+            file.close();
+            file = root.openNextFile();
+        }
+
+        file.close();
+        root.close();
+    }));
+}
 
 static void testsPage(ui::Page *p) {
-    p->addItem(ui::button("Execute", execStart));
+    static bytelang::primitive::u8 buf[] = {
+        0x01, 0x01, 0xE8, 0x03, 0x02, 0x64, 0x03, 0x4B, 0x07, 0x00, 0x07, 0x01, 0x07, 0x02, 0x07, 0x01, 0x07,
+        0x00, 0x04, 0x02, 0x05, 0x64, 0x00, 0x00, 0x00, 0x05, 0x9C, 0xFF, 0x00, 0x00, 0x05, 0x00, 0x00,
+        0x00, 0x00, 0x05, 0x00, 0x00, 0x64, 0x00, 0x05, 0x00, 0x00, 0x9C, 0xFF, 0x05, 0x00, 0x00, 0x00,
+        0x00, 0x01, 0xE8, 0x03, 0x00
+    };
+    static bytelang::test::MockStream mock_stream(bytelang::core::MemIO(buf, sizeof(buf)));
+
+    p->addItem(ui::button("MockStream", [](ui::Widget *) {
+        mock_stream.reset();
+        startPrintingTask(mock_stream);
+    }));
+
+    uiSelectFile(p->addPage("SPIFFS"), SPIFFS);
 }
 
 static void printingPage(ui::Page *p) {
@@ -180,6 +220,10 @@ void setup() {
     Serial.begin(115200);
     createStaticTask(uiTask, 4096, 1)
     createStaticTask(posTask, 4096, 1)
+
+    if (not SPIFFS.begin(false)) {
+        Serial.println("An Error has occurred while mounting SPIFFS");
+    }
 }
 
 void loop() {}
