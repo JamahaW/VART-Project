@@ -11,7 +11,7 @@ namespace vart {
     public:
 
         /// Режим работы
-        enum Mode : char {
+        enum Mode : unsigned char {
             /// По текущей позиции
             Position = 0x00,
 

@@ -5,15 +5,30 @@
 #include "ui/Window.hpp"
 #include "vart/Planner.hpp"
 #include "vart/MarkerPrintTool.hpp"
+#include "bytelang/StreamInterpreter.hpp"
 
 
 namespace vart {
     /// Окно графического интерфейса
     extern ui::Window window;
 
-    /// Планировщик движения
-    extern Planner planner;
+    /// Контекст для исполнения инструкций
+    struct VartContext {
+        /// Используемый планировщик
+        Planner &planner;
 
-    /// Инструмент печати
-    extern MarkerPrintTool marker_print_tool;
+        /// Используемый инструмент
+        MarkerPrintTool &tool;
+
+        /// Прогресс печати
+        uint8_t progress;
+    };
+
+    extern VartContext context;
+
+    /// Конкретизация интерпретатора
+    using VartIntepreter = bytelang::StreamInterpreter<VartContext>;
+
+    /// Потоковый интерпретатор команд
+    extern VartIntepreter interpreter;
 }

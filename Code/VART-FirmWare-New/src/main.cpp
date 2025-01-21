@@ -7,24 +7,19 @@
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 
-using vart::Vector2D;
 
-
-static void goTo(const Vector2D target) { vart::planner.moveTo(target); }
+static void goTo(const vart::Vector2D target) { vart::context.planner.moveTo(target); }
 
 using M = vart::Planner::Mode;
 
 using Marker = vart::MarkerPrintTool::Marker;
 
-static void setTool(Marker marker) {
-    vart::marker_print_tool.setActiveTool(marker);
-}
-
-#define addModeButton(page, mode)\
-    page->addItem(ui::button( #mode, [](ui::Widget *) { vart::planner.setMode(mode); }))
+static void setTool(Marker marker) { vart::context.tool.setActiveTool(marker); }
 
 static void movementPage(ui::Page *p) {
     static int tx = 0, ty = 0;
+#define addModeButton(page, mode)\
+    page->addItem(ui::button( #mode, [](ui::Widget *) { vart::context.planner.setMode(mode); }))
 
     p->addItem(ui::button("Move", [](ui::Widget *) {
         goTo({double(tx), double(ty)});
@@ -37,12 +32,12 @@ static void movementPage(ui::Page *p) {
     addModeButton(p, M::Speed);
     addModeButton(p, M::Accel);
 
-    static int accel = int(vart::planner.getAccel());
-    static int speed = int(vart::planner.getSpeed());
+    static int accel = int(vart::context.planner.getAccel());
+    static int speed = int(vart::context.planner.getSpeed());
 
     void (*spin)(ui::Widget *) = [](ui::Widget *) {
-        vart::planner.setSpeed(speed);
-        vart::planner.setAccel(accel);
+        vart::context.planner.setSpeed(speed);
+        vart::context.planner.setAccel(accel);
     };
 
     p->addItem(ui::spinBox(&speed, 25, spin, 1000, 0));
@@ -50,7 +45,7 @@ static void movementPage(ui::Page *p) {
 }
 
 static void servicePage(ui::Page *p) {
-    auto &controller = vart::planner.getController();
+    auto &controller = vart::context.planner.getController();
     p->addItem(ui::button("enable", [&controller](ui::Widget *) { controller.setEnabled(true); }));
     p->addItem(ui::button("disable", [&controller](ui::Widget *) { controller.setEnabled(false); }));
     p->addItem(ui::button("setHome", [&controller](ui::Widget *) { controller.setCurrentPositionAsHome(); }));
@@ -67,7 +62,6 @@ static void servicePage(ui::Page *p) {
     p->addItem(ui::spinBox(&r, 5, on_spin, 100, -100));
 }
 
-
 static void testsPage(ui::Page *p) {
     static int size = 200;
     p->addItem(ui::spinBox(&size, 25, nullptr, 500, 0));
@@ -75,7 +69,7 @@ static void testsPage(ui::Page *p) {
     p->addItem(ui::button("DemoRect", [](ui::Widget *) {
         const auto s = double(size);
 
-        vart::planner.setMode(M::Accel);
+        vart::context.planner.setMode(M::Accel);
 
         setTool(Marker::None);
         goTo({s, s});
@@ -94,11 +88,11 @@ static void testsPage(ui::Page *p) {
         const auto r = double(size);
         double x, y;
 
-        vart::planner.setMode(M::Accel);
+        vart::context.planner.setMode(M::Accel);
         setTool(Marker::None);
         goTo({r, 0});
 
-        vart::planner.setMode(M::Speed);
+        vart::context.planner.setMode(M::Speed);
         setTool(Marker::Left);
 
         for (int deg = 1; deg <= 360; deg += 1) {
@@ -107,32 +101,29 @@ static void testsPage(ui::Page *p) {
             goTo({x, y});
         }
 
-        vart::planner.setMode(M::Accel);
+        vart::context.planner.setMode(M::Accel);
         setTool(Marker::None);
         goTo({0, 0});
     }));
 }
 
-
 static void markerToolPage(ui::Page *p) {
 
 #define makeAngleWidget(m)  {\
-    static int v = tool.getToolAngle(m);\
+    static int v = vart::context.tool.getToolAngle(m);\
     p->addItem(ui::label(#m));\
-    p->addItem(ui::spinBox(&v, 2, [](ui::Widget *) {tool.updateToolAngle(m, v);tool.setActiveTool(m);}, 180));\
+    p->addItem(ui::spinBox(&v, 2, [](ui::Widget *) {vart::context.tool.updateToolAngle(m, v);vart::context.tool.setActiveTool(m);}, 180));\
 }
 
-    auto &tool = vart::marker_print_tool;
+    static int d = int(vart::context.tool.getChangeDuration());
 
-    static int d = int(tool.getChangeDuration());
-
-    p->addItem(ui::button("enable", [](ui::Widget *) { tool.setEnabled(true); }));
-    p->addItem(ui::button("disable", [](ui::Widget *) { tool.setEnabled(false); }));
+    p->addItem(ui::button("enable", [](ui::Widget *) { vart::context.tool.setEnabled(true); }));
+    p->addItem(ui::button("disable", [](ui::Widget *) { vart::context.tool.setEnabled(false); }));
     makeAngleWidget(Marker::Left)
     makeAngleWidget(Marker::Right)
     makeAngleWidget(Marker::None)
 
-    p->addItem(ui::spinBox(&d, 50, [](ui::Widget *) { tool.setChangeDuration(d); }, 10000));
+    p->addItem(ui::spinBox(&d, 50, [](ui::Widget *) { vart::context.tool.setChangeDuration(d); }, 10000));
 }
 
 static void buildUI(ui::Page &p) {
@@ -156,7 +147,7 @@ static void buildUI(ui::Page &p) {
 }
 
 [[noreturn]] static void posTask(void *) {
-    auto &controller = vart::planner.getController();
+    auto &controller = vart::context.planner.getController();
 
     const auto update_period_ms = controller.getUpdatePeriodMs();
 

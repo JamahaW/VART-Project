@@ -5,9 +5,10 @@
 using hardware::MotorDriverL293;
 using hardware::ServoMotor;
 using vart::Pins;
+using vart::Area;
 using vart::Pulley;
 using vart::PositionController;
-using vart::Area;
+using vart::MarkerPrintTool;
 using vart::Planner;
 
 static auto left_encoder = hardware::Encoder(Pins::LeftEncoderA, Pins::LeftEncoderB);
@@ -72,4 +73,30 @@ static Planner::Settings settings = {
     .default_accel = 50
 };
 
-Planner vart::planner = Planner(settings, position_controller);
+static auto planner = Planner(settings, position_controller);
+
+static MarkerPrintTool::Settings marker_print_tool_settings = {
+    .angle_range = {
+        .min = 30,
+        .max = 120
+    },
+    .positions = {
+        78,
+        42,
+        118
+    },
+    .tool_change_duration_ms = 500
+};
+
+static const hardware::ServoMG90S servo_mg_90_s = {
+    .servo = Servo(),
+    .pin = vart::Pins::PrintToolServo
+};
+
+static auto marker_print_tool = MarkerPrintTool(marker_print_tool_settings, servo_mg_90_s);
+
+vart::VartContext vart::context = {
+    .planner = planner,
+    .tool = marker_print_tool,
+    .progress = 0
+};
