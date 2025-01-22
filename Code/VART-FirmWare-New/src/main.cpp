@@ -1,12 +1,13 @@
-#include <Arduino.h>
-
-
 #define  FS_NO_GLOBALS
 
+#include <Arduino.h>
 #include <SPIFFS.h>
 #include "vart/Devices.hpp"
 
 #include "ui/Factory.hpp"
+
+#include "vart/util/Pins.hpp"
+#include "SD.h"
 
 #include "bytelang/test/MockStream.hpp"
 #include "ui/FileWidget.hpp"
@@ -29,6 +30,7 @@ static void movementPage(ui::Page *p) {
         vart::context.planner.moveTo((const vart::Vector2D) {double(tx), double(ty)});
     }));
 
+    p->addItem(ui::label("Target"));
     p->addItem(ui::spinBox(&tx, 50, nullptr, 600, -600));
     p->addItem(ui::spinBox(&ty, 50, nullptr, 600, -600));
 
@@ -44,8 +46,23 @@ static void movementPage(ui::Page *p) {
         vart::context.planner.setAccel(accel);
     };
 
+    p->addItem(ui::label("Speed"));
     p->addItem(ui::spinBox(&speed, 25, spin, 1000, 0));
+    p->addItem(ui::label("Accel"));
     p->addItem(ui::spinBox(&accel, 5, spin, 1000, 0));
+
+    static int l, r;
+
+    auto &controller = vart::context.planner.getController();
+
+    auto on_spin = [&controller](ui::Widget *) {
+        controller.setOffsets(l, r);
+        controller.setTargetPosition({double(tx), double(ty)});
+    };
+
+    p->addItem(ui::label("Offset"));
+    p->addItem(ui::spinBox(&l, 5, on_spin, 100, -100));
+    p->addItem(ui::spinBox(&r, 5, on_spin, 100, -100));
 }
 
 static void servicePage(ui::Page *p) {
@@ -55,15 +72,6 @@ static void servicePage(ui::Page *p) {
     p->addItem(ui::button("setHome", [&controller](ui::Widget *) { controller.setCurrentPositionAsHome(); }));
     p->addItem(ui::button("pullOut", [&controller](ui::Widget *) { controller.pullRopesOut(); }));
     p->addItem(ui::button("pullIn", [&controller](ui::Widget *) { controller.pullRopesIn(); }));
-
-    static int l, r;
-
-    auto on_spin = [&controller](ui::Widget *) {
-        controller.setOffsets(l, r);
-        controller.setTargetPosition(controller.getCurrentPosition());
-    };
-    p->addItem(ui::spinBox(&l, 5, on_spin, 100, -100));
-    p->addItem(ui::spinBox(&r, 5, on_spin, 100, -100));
 }
 
 static ui::Page *printing_page = nullptr;
@@ -87,31 +95,32 @@ static void startPrintingTask(Stream &stream);
 
 static void startPrintingTask(Stream &stream) { xTaskCreate(bytecodeExecuteTask, "BL", 4096, &stream, 1, nullptr); };
 
-static void uiSelectFile(ui::Page *p, fs::FS &file_sys) {
-    p->addItem(ui::button("RELOAD LIST", [p, &file_sys](ui::Widget *w) {
+static void selectFilePage(ui::Page *p, fs::FS &file_sys, const std::function<void()> &on_reload = nullptr) {
+    static fs::File bytecode_stream;
+
+    p->addItem(ui::button("Reload", [p, &file_sys, on_reload](ui::Widget *w) {
+        auto on_click = [&file_sys](ui::Widget *w) {
+            bytecode_stream = file_sys.open(w->asString());
+            startPrintingTask(bytecode_stream);
+        };
+
+        on_reload();
+
         p->clearItems();
         p->addItem(w);
 
         fs::File root = file_sys.open("/");
-
-        if (not root) {
-            return;
-        }
-
         fs::File file = root.openNextFile();
 
         while (file) {
             if (not file.isDirectory()) {
-                p->addItem(new ui::FileWidget(file, [](ui::Widget *w) {
-                    Serial.println((const char *) w->value);
-                }));
+                p->addItem(new ui::FileWidget(file, on_click));
             }
 
             file.close();
             file = root.openNextFile();
         }
 
-        file.close();
         root.close();
     }));
 }
@@ -130,7 +139,12 @@ static void testsPage(ui::Page *p) {
         startPrintingTask(mock_stream);
     }));
 
-    uiSelectFile(p->addPage("SPIFFS"), SPIFFS);
+    selectFilePage(p->addPage("SPIFFS"), SPIFFS);
+    selectFilePage(p->addPage("SD"), SD, []() {
+        if (not SD.begin(vart::Pins::SdCs)) {
+            Serial.println("An Error has occurred while mounting SD");
+        }
+    });
 }
 
 static void printingPage(ui::Page *p) {
@@ -168,11 +182,30 @@ static void markerToolPage(ui::Page *p) {
     p->addItem(ui::spinBox(&d, 50, [](ui::Widget *) { vart::context.tool.setChangeDuration(d); }, 10000));
 }
 
+static void workAreaPage(ui::Page *p) {
+    static int w;
+    static int h;
+
+    auto size = vart::context.planner.getController().getAreaSize();
+    w = int(size.x);
+    h = int(size.y);
+
+    auto update = [](ui::Widget *) {
+        vart::context.planner.getController().setAreaSize({double(w), double(h)});
+    };
+
+    p->addItem(ui::label("Width"));
+    p->addItem(ui::spinBox(&w, 25, update, 4000, 100));
+    p->addItem(ui::label("Height"));
+    p->addItem(ui::spinBox(&h, 25, update, 4000, 100));
+}
+
 static void buildUI(ui::Page &p) {
+    testsPage(p.addPage("- MEDIA -"));
+    workAreaPage(p.addPage("Area"));
     servicePage(p.addPage("Service"));
     movementPage(p.addPage("Movement"));
     markerToolPage(p.addPage("MarkerTool"));
-    testsPage(p.addPage("Tests"));
 
     printing_page = new ui::Page(vart::window, "Printing...");
     printingPage(printing_page);
@@ -217,6 +250,8 @@ static void buildUI(ui::Page &p) {
 }
 
 void setup() {
+    using vart::Pins;
+
     Serial.begin(115200);
     createStaticTask(uiTask, 4096, 1)
     createStaticTask(posTask, 4096, 1)
@@ -224,6 +259,10 @@ void setup() {
     if (not SPIFFS.begin(false)) {
         Serial.println("An Error has occurred while mounting SPIFFS");
     }
+
+    SPI.begin(Pins::SdClk, Pins::SdMiso, Pins::SdMosi, Pins::SdCs);
+
+
 }
 
 void loop() {}

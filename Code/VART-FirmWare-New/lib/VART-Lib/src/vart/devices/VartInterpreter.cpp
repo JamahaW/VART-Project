@@ -83,6 +83,9 @@ static VartResult set_progress(Reader &reader, VartContext &context) {
 
     context.progress = progress;
 
+    vart::window.display.setCursor();
+    vart::window.render();
+
     return VartResult::Ok;
 }
 

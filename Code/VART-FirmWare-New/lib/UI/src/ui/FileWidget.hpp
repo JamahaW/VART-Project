@@ -18,7 +18,7 @@ namespace ui {
         explicit FileWidget(fs::File &file, std::function<void(Widget *)> onClick) :
             Widget(
                 ValueType::Chars,
-                (void *) c_str_copy(file.name()),
+                (void *) c_str_copy(file.path()),
                 std::move(onClick),
                 nullptr
             ) {}

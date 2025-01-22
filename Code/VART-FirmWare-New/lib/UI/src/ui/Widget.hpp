@@ -50,6 +50,10 @@ namespace ui {
 
         void onChange(int change) override;
 
+        const char *asString() const {
+            return (const char *) value;
+        }
+
     private:
         void draw(gfx::OLED &display) const;
     };
