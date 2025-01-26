@@ -124,8 +124,6 @@ namespace vart {
                 controller.setTargetPosition(Vector2D::interpolate(begin, target, i / steps_total));
                 delay(1);
             }
-
-            // controller.setTargetPosition(target);
         }
 
         void goConstAccel(Vector2D target) {
