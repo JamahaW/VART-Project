@@ -125,7 +125,7 @@ namespace vart {
                 delay(1);
             }
 
-            controller.setTargetPosition(target);
+            // controller.setTargetPosition(target);
         }
 
         void goConstAccel(Vector2D target) {
