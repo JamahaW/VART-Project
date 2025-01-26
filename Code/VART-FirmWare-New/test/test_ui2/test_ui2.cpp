@@ -20,6 +20,8 @@ static EncButton eb(Pins::UserEncoderA, Pins::UserEncoderB, Pins::UserEncoderBut
 
 
 struct OledDisplay : ui2::abc::Display {
+    OledDisplay() {}
+
     gfx::OLED oled;
 
     size_t write(uint8_t uint_8) override { return oled.write(uint_8); }

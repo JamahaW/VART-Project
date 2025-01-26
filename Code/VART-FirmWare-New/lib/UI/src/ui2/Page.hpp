@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 #include "Arduino.h"
 #include "abc/Display.hpp"
 #include "abc/Widget.hpp"
@@ -71,6 +72,14 @@ namespace ui2 {
                     widgets[cursor]->onEvent(event);
                     return;
             }
+        }
+
+        void clearWidgets(int except) {
+            auto to_parent = widgets.at(0);
+            auto w = widgets.at(except);
+            widgets.clear();
+            add(to_parent);
+            add(w);
         }
 
     private:

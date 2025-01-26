@@ -23,8 +23,8 @@ namespace ui2 {
 
         /// Сменить страницу
         void setPage(Page *new_page) {
-            current_page = new_page;
             display.clear();
+            current_page = new_page;
             current_page->render(display);
         }
 

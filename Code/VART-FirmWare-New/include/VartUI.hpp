@@ -11,6 +11,8 @@
 #include "ui2/impl/SpinBox.hpp"
 #include "ui2/impl/Button.hpp"
 #include "ui2/impl/CheckBox.hpp"
+#include "ui2/impl/Display.hpp"
+#include "ui2/impl/ProgressBar.hpp"
 
 
 void workAreaPage(ui2::Page *p) {
@@ -28,42 +30,46 @@ void workAreaPage(ui2::Page *p) {
     }));
 }
 
-//
-//void printingPage(ui::Page *p) {
-//    p->addItem(ui::button("ABORT", [](ui::Widget *) { vart::interpreter.abort(); }));
-//    p->addItem(ui::button("PAUSE", [](ui::Widget *) { vart::interpreter.setPaused(true); }));
-//    p->addItem(ui::button("RESUME", [](ui::Widget *) { vart::interpreter.setPaused(false); }));
-//
-//    p->addItem(ui::label("Progress"));
-//    p->addItem(ui::display(&vart::context.progress, ui::ValueType::Integer));
-//}
-//
-//void afterPrint(ui::Page *p) {
-//    p->addItem(ui::button("TO MAIN", [](ui::Widget *) { vart::window.setPage(&vart::window.main_page); }));
-//    p->addItem(ui::label("QUIT_CODE"));
-//    p->addItem(ui::display(&vart::context.quit_code, ui::ValueType::Integer));
-//}
-//
-//void markerToolPage(ui::Page *p) {
-//    using Marker = vart::MarkerPrintTool::Marker;
-//#define makeAngleWidget(m)  {\
-//    static int v = vart::context.tool.getToolAngle(m);\
-//    p->addItem(ui::label(#m));\
-//    p->addItem(ui::spinBox(&v, 2, [&tool](ui::Widget *) {tool.updateToolAngle(m, v);tool.setActiveTool(m);}, 180));\
-//}
-//
-//    auto &tool = vart::context.tool;
-//    static int d = int(tool.getChangeDuration());
-//
-//    p->addItem(ui::button("enable", [&tool](ui::Widget *) { tool.setEnabled(true); }));
-//    p->addItem(ui::button("disable", [&tool](ui::Widget *) { tool.setEnabled(false); }));
-//    makeAngleWidget(Marker::Left)
-//    makeAngleWidget(Marker::Right)
-//    makeAngleWidget(Marker::None)
-//
-//    p->addItem(ui::spinBox(&d, 50, [&tool](ui::Widget *) { tool.setChangeDuration(d); }, 10000));
-//}
-//
+void printingPage(ui2::Page *p) {
+    using ui2::impl::Button;
+    using ui2::impl::CheckBox;
+    using ui2::impl::ProgressBar;
+
+    p->add(new Button("Stop!", []() { vart::interpreter.abort(); }));
+    p->add(new CheckBox("Pause", [](bool p) { vart::interpreter.setPaused(p); }));
+    p->add(new ProgressBar<int>(vart::context.progress));
+}
+
+void afterPrint(ui2::Page *p) {
+    using ui2::impl::Button;
+    using ui2::impl::Display;
+
+    p->add(vart::window.root.to_this_page);
+    p->add(new Display<int>("QUIT CODE", vart::context.quit_code));
+}
+
+void markerToolPage(ui2::Page *p) {
+    using Angle = vart::MarkerPrintTool::Angle;
+    using Marker = vart::MarkerPrintTool::Marker;
+
+    using ui2::impl::CheckBox;
+    using SpinBoxAngle = ui2::impl::SpinBox<Angle>;
+    using SpinBoxU16 = ui2::impl::SpinBox<uint16_t>;
+
+    auto &t = vart::context.tool;
+    p->add(new CheckBox("Tool", [&t](bool e) { t.setEnabled(e); }));
+
+    static const SpinBoxAngle::Settings s = {0, 180, 1};
+#define MarkerTool(m) (__extension__( {static SpinBoxAngle __s(#m, s, t.getToolAngle(m), [&t](Angle a) {t.updateToolAngle(m, a);t.setActiveTool(m);}); &__s;} ))
+    p->add(MarkerTool(Marker::None));
+    p->add(MarkerTool(Marker::Left));
+    p->add(MarkerTool(Marker::Right));
+
+    static const SpinBoxU16::Settings duration_settings = {0, 1000, 50};
+    static SpinBoxU16 duration_spin_box("Duration", duration_settings, t.getChangeDuration(), [&t](uint16_t d) { t.setChangeDuration(d); });
+    p->add(&duration_spin_box);
+}
+
 static void servicePage(ui2::Page *p) {
     using ui2::impl::Button;
     using ui2::impl::CheckBox;

@@ -14,7 +14,6 @@ namespace ui2 {
 
             /// Отреагировать на событие
             virtual void onEvent(Event event) {};
-
         };
     }
 }
