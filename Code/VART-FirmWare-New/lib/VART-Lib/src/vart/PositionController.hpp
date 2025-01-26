@@ -87,10 +87,8 @@ namespace vart {
         }
 
         /// Установить смещения тросов
-        void setOffsets(int32_t left, int32_t right) {
-            left_pulley.rope_offset_mm = left;
-            right_pulley.rope_offset_mm = right;
-        }
+        void setLeftOffset(int32_t left) { left_pulley.rope_offset_mm = left; }
+        void setRightOffset(int32_t right) { right_pulley.rope_offset_mm = right; }
 
     };
 }

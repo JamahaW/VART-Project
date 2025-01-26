@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ui2/abc/Widget.hpp"
+#include "../abc/Widget.hpp"
 
 
 namespace ui2 {

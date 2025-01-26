@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Page.hpp"
-#include "ui2/Event.hpp"
+#include "Event.hpp"
 
 
 namespace ui2 {
@@ -12,8 +12,14 @@ namespace ui2 {
         /// Дисплей для отображения графики
         abc::Display &display;
 
+        /// Главная страница
+        Page root = Page(*this, "Main");
+
         /// Отображаемая страница
-        Page *current_page;
+        Page *current_page = &root;
+
+        explicit Window(abc::Display &display) :
+            display(display) {}
 
         /// Сменить страницу
         void setPage(Page *new_page) {

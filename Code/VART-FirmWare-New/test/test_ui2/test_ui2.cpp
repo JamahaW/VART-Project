@@ -1,5 +1,3 @@
-#include "Arduino.h"
-
 #include "EncButton.h"
 
 #include "gfx/OLED.hpp"
@@ -9,7 +7,6 @@
 #include "ui2/impl/Label.hpp"
 #include "ui2/impl/Button.hpp"
 #include "ui2/impl/SpinBox.hpp"
-
 #include "vart/util/Pins.hpp"
 
 
@@ -52,18 +49,7 @@ const SpinBox<int>::Settings s = {
     150
 };
 
-static ui2::Page p = {
-    .title = "Test Page",
-    .cursor = 0,
-    .widgets = {
-        new Label("Text"),
-        new Label("Label"),
-        new uButton("Button 1", cb),
-        new uButton("Button 2", cb),
-        new SpinBox<int>("SpinInt", s, cbs),
-        nullptr
-    }
-};
+static ui2::Page p = {<#initializer#>, "Test Page"};
 
 ui2::Window window = {
     .display = display,
@@ -73,6 +59,7 @@ ui2::Window window = {
 void setup() {
     display.oled.init();
     window.onEvent(Event::ForceUpdate);
+    Serial.begin(115200);
 }
 
 void loop() {

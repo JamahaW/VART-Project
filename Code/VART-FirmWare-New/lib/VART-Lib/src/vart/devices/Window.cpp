@@ -1,34 +1,24 @@
 #include "vart/Devices.hpp"
-#include "vart/util/Pins.hpp"
-#include "gfx/OLED.hpp"
-#include "EncButton.h"
 
 
-using ui::Window;
-using ui::Event;
+struct OLEDDisplay : ui2::abc::Display {
+    gfx::OLED oled;
 
-static gfx::OLED display;
+    void init() override { oled.init(); }
 
-static EncButton encoder(vart::Pins::UserEncoderA, vart::Pins::UserEncoderB, vart::Pins::UserEncoderButton);
+    size_t write(uint8_t uint_8) override { return oled.write(uint_8); }
 
-Window vart::window = Window(display, []() -> Event {
-    encoder.tick();
+    void setCursor(PixelPosition x, PixelPosition y) override { oled.setCursor(x, y); }
 
-    if (encoder.left()) {
-        return Event::NextItem;
-    }
-    if (encoder.right()) {
-        return Event::PastItem;
-    }
-    if (encoder.click()) {
-        return Event::Click;
-    }
-    if (encoder.leftH()) {
-        return Event::ChangeUp;
-    }
-    if (encoder.rightH()) {
-        return Event::ChangeDown;
-    }
+    void clear() override { oled.clear(); }
 
-    return Event::Idle;
-});
+    void setTextInverted(bool is_inverted) override { oled.setInvertText(is_inverted); }
+
+    uint8_t getWidth() const override { return 128 / 6; }
+
+    uint8_t getRows() const override { return 8; }
+};
+
+static OLEDDisplay display;
+
+ui2::Window vart::window(display);

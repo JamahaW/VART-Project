@@ -5,7 +5,6 @@
 
 
 namespace gfx {
-// TODO интерфейс для текстовых дисплеев
     class OLED : public Print {
 
     private:
@@ -85,4 +84,4 @@ namespace gfx {
         bool isEndX() const;
     };
 
-} // namespace gfx_legacy
+}

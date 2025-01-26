@@ -13,7 +13,6 @@ namespace ui2 {
                 T min;
                 T max;
                 T step;
-                T default_value;
 
                 T clamp(T v) const { return constrain(v, min, max); }
             };
@@ -21,10 +20,15 @@ namespace ui2 {
             const char *name;
             const Settings &settings;
             std::function<void(T)> on_change;
-            T value = settings.default_value;
+            T value;
 
-            explicit SpinBox(const char *name, const Settings &settings, std::function<void(T)> on_change) :
-                name(name), settings(settings), on_change(on_change) {}
+            explicit SpinBox(
+                const char *name,
+                const Settings &settings,
+                T default_value,
+                std::function<void(T)> on_change = nullptr
+            ) :
+                name(name), settings(settings), value(default_value), on_change(on_change) {}
 
             void render(abc::Display &display, bool is_selected) const override {
                 display.setTextInverted(is_selected);
@@ -38,15 +42,10 @@ namespace ui2 {
             }
 
             void onEvent(Event event) override {
-                if (on_change == nullptr) { return; }
-
-                if (event == Event::Click) { on_change(value); }
-
                 if (event == Event::StepUp) { value += settings.step; }
                 else if (event == Event::StepDown) { value -= settings.step; }
-
                 value = settings.clamp(value);
-                on_change(value);
+                if (on_change != nullptr) { on_change(value); }
             }
         };
     }

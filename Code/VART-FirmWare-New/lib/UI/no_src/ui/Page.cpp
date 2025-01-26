@@ -16,12 +16,12 @@ ui::Page::Page(ui::Window &window, const char *title) :
 }
 
 void ui::Page::render(gfx::OLED &display) const {
-    constexpr auto gui_last_item_index = 5;
 
     display.setCursor(0, 0);
 
     display.println(title);
 
+    constexpr auto gui_last_item_index = 5;
     uint8_t begin = max(cursor - gui_last_item_index, 0);
     uint8_t end = _min(items.size(), gui_last_item_index + 1) + begin;
 
@@ -35,18 +35,24 @@ void ui::Page::render(gfx::OLED &display) const {
 
 bool ui::Page::handleInput(ui::Event e) {
     switch (e) {
-        case Event::Click:items[cursor]->onClick();
+        case Event::Click:
+            items[cursor]->onClick();
             return true;
-        case Event::NextItem:moveCursor(1);
+        case Event::NextItem:
+            moveCursor(1);
             return true;
-        case Event::PastItem:moveCursor(-1);
+        case Event::PastItem:
+            moveCursor(-1);
             return true;
-        case Event::ChangeUp:items[cursor]->onChange(1);
+        case Event::ChangeUp:
+            items[cursor]->onChange(1);
             return true;
-        case Event::ChangeDown:items[cursor]->onChange(-1);
+        case Event::ChangeDown:
+            items[cursor]->onChange(-1);
             return true;
         case Event::Idle:
-        default:return false;
+        default:
+            return false;
     }
 }
 

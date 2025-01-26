@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ui2/abc/Display.hpp"
-#include "ui2/Event.hpp"
+#include "Display.hpp"
+#include "../Event.hpp"
 
 
 namespace ui2 {

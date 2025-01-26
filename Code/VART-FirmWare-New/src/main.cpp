@@ -1,15 +1,16 @@
-//#define  FS_NO_GLOBALS
-//
 #include <Arduino.h>
 #include "vart/Devices.hpp"
-#include "vart/util/Pins.hpp"
 #include "misc/Macro.hpp"
 #include "VartUI.hpp"
-//
-//
-//#pragma clang diagnostic push
-//#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
-//
+
+#include "EncButton.h"
+#include "vart/util/Pins.hpp"
+
+
+using vart::Pins;
+using ui2::Event;
+
+
 //
 //static ui::Page *printing_page = nullptr;
 //
@@ -102,11 +103,11 @@
 //    selectFilePage(p->addPage("SD"), SD, sd_reload);
 //}
 //
-//static void buildUI(ui::Page &p) {
+static void buildUI(ui2::Page &p) {
 //    testsPage(p.addPage("- MEDIA -"));
-//    workAreaPage(p.addPage("Area"));
-//    servicePage(p.addPage("Service"));
-//    movementPage(p.addPage("Movement"));
+    workAreaPage(p.add("Work Area"));
+    servicePage(p.add("Service"));
+    movementPage(p.add("Movement"));
 //    markerToolPage(p.addPage("MarkerTool"));
 //
 //    printing_page = new ui::Page(vart::window, "Printing...");
@@ -114,130 +115,52 @@
 //
 //    after_print_page = new ui::Page(vart::window, "Printing End");
 //    afterPrint(after_print_page);
-//}
-//
-//[[noreturn]] static void uiTask(void *) {
-//    vart::window.display.init();
-//
-//    buildUI(vart::window.main_page);
-//
-//    vart::window.render();
-//
-//    while (true) {
-//        vart::window.update();
+}
+
+
+[[noreturn]] static void uiTask(void *) {
+    vart::window.display.init();
+    buildUI(vart::window.root);
+
+    static EncButton eb(Pins::UserEncoderA, Pins::UserEncoderB, Pins::UserEncoderButton);
+
+    while (true) {
+        eb.tick();
+        if (eb.left()) { vart::window.onEvent(Event::NextWidget); }
+        if (eb.right()) { vart::window.onEvent(Event::PreviousWidget); }
+        if (eb.rightH()) { vart::window.onEvent(Event::StepUp); }
+        if (eb.leftH()) { vart::window.onEvent(Event::StepDown); }
+        if (eb.click()) { vart::window.onEvent(Event::Click); }
 //        vTaskDelay(1);
-//        taskYIELD();
-//    }
-//}
-//
-//[[noreturn]] static void posTask(void *) {
-//    auto &controller = vart::context.planner.getController();
-//    const auto update_period_ms = controller.getUpdatePeriodMs();
-//
-//    analogWriteFrequency(30000);
-//
-//    while (true) {
-//        controller.update();
-//        vTaskDelay(update_period_ms);
-//        taskYIELD();
-//    }
-//}
-//
-//void setup() {
-//    using vart::Pins;
-//    SPI.begin(Pins::SdClk, Pins::SdMiso, Pins::SdMosi, Pins::SdCs);
-//    Serial.begin(115200);
-//
-//    createStaticTask(uiTask, 4096, 1)
-//    createStaticTask(posTask, 4096, 1)
-//}
-//
-//void loop() {}
-//
-//#pragma clang diagnostic pop
-
-
-
-#include "EncButton.h"
-
-#include "gfx/OLED.hpp"
-#include "ui2/abc/Display.hpp"
-#include "ui2/Window.hpp"
-#include "ui2/Page.hpp"
-#include "ui2/impl/Label.hpp"
-#include "ui2/impl/Button.hpp"
-#include "ui2/impl/SpinBox.hpp"
-
-
-
-using vart::Pins;
-using ui2::impl::Label;
-using ui2::impl::SpinBox;
-using uButton = ui2::impl::Button;
-using ui2::Event;
-
-static EncButton eb(Pins::UserEncoderA, Pins::UserEncoderB, Pins::UserEncoderButton);
-
-
-struct OledDisplay : ui2::abc::Display {
-    gfx::OLED oled;
-
-    size_t write(uint8_t uint_8) override { return oled.write(uint_8); }
-
-    void setCursor(PixelPosition x, PixelPosition y) override { oled.setCursor(x, y); }
-
-    void clear() override { oled.clear(); }
-
-    void setTextInverted(bool is_inverted) override { oled.setInvertText(is_inverted); }
-};
-
-static OledDisplay display;
-
-
-void cb() {
-    Serial.println("Click!");
-}
-
-void cbs(int v) {
-    Serial.println(v);
-}
-
-const SpinBox<int>::Settings s = {
-    100,
-    200,
-    5,
-    150
-};
-
-static ui2::Page p = {
-    .title = "Test Page",
-    .cursor = 0,
-    .widgets = {
-        new Label("Text"),
-        new Label("Label"),
-        new uButton("Button 1", cb),
-        new uButton("Button 2", cb),
-        new SpinBox<int>("SpinInt", s, cbs),
-        nullptr
+        taskYIELD();
     }
-};
+}
 
-ui2::Window window = {
-    .display = display,
-    .current_page = &p
-};
+[[noreturn]] static void posTask(void *) {
+    auto &controller = vart::context.planner.getController();
+    const auto update_period_ms = controller.getUpdatePeriodMs();
+
+    analogWriteFrequency(30000);
+
+    while (true) {
+        controller.update();
+        vTaskDelay(update_period_ms);
+        taskYIELD();
+    }
+}
+
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
+
 
 void setup() {
-    display.oled.init();
-    window.onEvent(Event::ForceUpdate);
+//    SPI.begin(Pins::SdClk, Pins::SdMiso, Pins::SdMosi, Pins::SdCs);
+    createStaticTask(uiTask, 4096, 1)
+    createStaticTask(posTask, 4096, 1)
+
     Serial.begin(115200);
 }
 
-void loop() {
-    eb.tick();
-    if (eb.left()) { window.onEvent(Event::NextWidget); }
-    if (eb.right()) { window.onEvent(Event::PreviousWidget); }
-    if (eb.rightH()) { window.onEvent(Event::StepUp); }
-    if (eb.leftH()) { window.onEvent(Event::StepDown); }
-    if (eb.click()) { window.onEvent(Event::Click); }
-}
+void loop() {}
+
+#pragma clang diagnostic pop

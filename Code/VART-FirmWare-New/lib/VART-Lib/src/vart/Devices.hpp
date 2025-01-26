@@ -1,16 +1,15 @@
-/// Устройства VART
-
 #pragma once
 
-#include "ui/Window.hpp"
+#include "ui2/Window.hpp"
 #include "vart/Planner.hpp"
 #include "vart/MarkerPrintTool.hpp"
 #include "bytelang/StreamInterpreter.hpp"
+#include "gfx/OLED.hpp"
 
 
 namespace vart {
     /// Окно графического интерфейса
-    extern ui::Window window;
+    extern ui2::Window window;
 
     /// Контекст для исполнения инструкций
     struct VartContext {
