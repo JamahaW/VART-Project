@@ -1,6 +1,6 @@
 #pragma once
 
-#include "hardware/ServoMotor.hpp"
+#include <hardware/ServoMotor.hpp>
 
 
 namespace vart {

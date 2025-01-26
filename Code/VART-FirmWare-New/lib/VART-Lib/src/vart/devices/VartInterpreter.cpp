@@ -1,6 +1,6 @@
-#include "vart/Devices.hpp"
+#include <vart/Devices.hpp>
 
-#include "vart/util/Macro.hpp"
+#include <vart/util/Macro.hpp>
 
 
 using VartResult = vart::VartIntepreter::Result;
