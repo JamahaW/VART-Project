@@ -11,10 +11,8 @@ namespace hardware {
     private:
         /// Пин фазы А (Основная фаза с прерыванием)
         const uint8_t pin_phase_a;
-
         /// Пин фазы Б (Второстепенная фаза для определения направления)
         const uint8_t pin_phase_b;
-
         /// Текущая позиция в тиках
         volatile int32_t current_position_ticks = 0;
 

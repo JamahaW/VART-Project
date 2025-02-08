@@ -9,7 +9,6 @@ namespace vart {
 
         struct Settings {
             hardware::ServoMotor::Settings servomotor;
-            hardware::ServoMG90S::Settings servo_mg90s;
             Area::Settings area;
             Pulley::Settings pulley;
             Planner::Settings planner;

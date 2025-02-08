@@ -1,11 +1,8 @@
 #pragma once
 
 #include <Arduino.h>
-
-
 #include "hardware/Encoder.hpp"
 #include "hardware/MotorDriver.hpp"
-#include "vart/util/Macro.hpp"
 #include "pid/Regulator.hpp"
 
 
@@ -19,13 +16,11 @@ namespace hardware {
         /// Настройки сервопривода
         struct Settings {
             /// Период обновления регулятора в секундах
-            const float update_period_seconds;
-
+            float update_period_seconds;
             /// Максимальная абсолютная ошибка позиционирования
-            const uint8_t ready_max_abs_error;
-
+            uint8_t ready_max_abs_error;
             /// Параметры регулятора позиции
-            pid::RegulatorSettings position;
+            pid::Regulator::Settings position;
         };
 
         /// Настройки
@@ -35,16 +30,12 @@ namespace hardware {
 
         /// Энкодер
         Encoder encoder;
-
         /// Драйвер
         const MotorDriverL293 driver;
-
         /// Регулятор ШИМ по положению
         const pid::Regulator position_regulator;
-
         /// Целевое положение
         int32_t target_position_ticks{0};
-
         /// Сервопривод включен
         bool is_enabled{false};
 
@@ -98,8 +89,9 @@ namespace hardware {
 
         /// Обновить регулятор
         void update() {
-            if (not is_enabled) { return; }
-            driver.setPower(int32_t(position_regulator.calc(calcPositionError(), getUpdatePeriodSeconds())));
+            if (is_enabled) {
+                driver.setPower(int32_t(position_regulator.calc(calcPositionError(), getUpdatePeriodSeconds())));
+            }
         }
 
     private:

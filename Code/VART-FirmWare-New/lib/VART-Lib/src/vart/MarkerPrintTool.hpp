@@ -9,6 +9,8 @@ namespace vart {
     class MarkerPrintTool {
     public:
 
+        using Angle = hardware::ServoMG90S::Angle;
+
         /// Выбор инструмента
         enum Marker : unsigned char {
             /// Никакой (Маркер не выбран)
@@ -21,9 +23,6 @@ namespace vart {
             TotalCount
         };
 
-        /// Примитив для передачи угла
-        using Angle = uint8_t;
-
         /// Параметры инструмента печати
         struct Settings {
             /// Допустимый диапазон углов
@@ -35,14 +34,14 @@ namespace vart {
     private:
 
         /// Настройки
-        Settings settings;
+        Settings &settings;
 
     public:
 
         /// Сервопривод для выбора маркеров
         hardware::ServoMG90S servo;
 
-        explicit MarkerPrintTool(Settings settings, hardware::ServoMG90S servo) :
+        explicit MarkerPrintTool(Settings &settings, hardware::ServoMG90S servo) :
             servo(std::move(servo)), settings(settings) {}
 
         /// Обновить угол для маркера
@@ -54,10 +53,6 @@ namespace vart {
         Angle getToolAngle(Marker marker) { return settings.positions.at(marker); }
 
         /// Выбрать маркер
-        void setActiveTool(Marker marker) {
-            servo.setAngle(settings.positions.at(marker));
-        }
-
-
+        void setActiveTool(Marker marker) { servo.setAngle(settings.positions.at(marker)); }
     };
 }

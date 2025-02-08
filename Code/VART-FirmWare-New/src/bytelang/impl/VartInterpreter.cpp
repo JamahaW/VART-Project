@@ -84,8 +84,6 @@ static Result set_active_tool(Reader &reader) {
     auto &tool = vart::Device::getInstance().tool;
     tool.setActiveTool(static_cast<vart::MarkerPrintTool::Marker>(tool_id));
 
-    while (not tool.servo.isReady()) { delay(10); }
-
     return Result::Ok;
 }
 

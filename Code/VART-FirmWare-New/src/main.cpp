@@ -29,20 +29,19 @@ static ui2::Page *after_print_page = nullptr;
 [[noreturn]] static void bytecodeExecuteTask(void *v) {
     auto stream = static_cast<Stream *>(v);
 
-    auto &w = ui2::Window::getInstance();
     auto &dev = vart::Device::getInstance();
-
     dev.context.progress = 0;
-
-    w.setPage(printing_page);
     dev.context.quit_code = bytelang::impl::VartInterpreter::getInstance().run(*stream);
-    w.setPage(after_print_page);
+
+    ui2::Window::getInstance().setPage(after_print_page);
 
     vTaskDelete(nullptr);
     while (true) { delay(1); }
 }
 
 static void startPrintingTask(Stream &stream) {
+    ui2::Window::getInstance().setPage(printing_page);
+
     xTaskCreate(
         bytecodeExecuteTask,
         "BL",
@@ -160,7 +159,6 @@ static void buildUI(ui2::Page &p) {
 
 [[noreturn]] static void servoTask(void *) {
     auto &dev = vart::Device::getInstance();
-    auto &servo = dev.tool.servo;
     auto &controller = dev.planner.getController();
     const auto update_period_ms = controller.getUpdatePeriodMs();
 
@@ -168,7 +166,6 @@ static void buildUI(ui2::Page &p) {
 
     while (true) {
         controller.update();
-        servo.update();
         vTaskDelay(update_period_ms);
         taskYIELD();
     }

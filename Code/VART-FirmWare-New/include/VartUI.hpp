@@ -51,7 +51,6 @@ void markerToolPage(ui2::Page *p) {
     using Angle = vart::MarkerPrintTool::Angle;
     using Marker = vart::MarkerPrintTool::Marker;
     using SpinBoxAngle = ui2::impl::NamedSpinBox<Angle>;
-    using SpinBoxU16 = ui2::impl::NamedSpinBox<uint16_t>;
 
     auto &t = vart::Device::getInstance().tool;
     p->add(new CheckBox("Tool", [&t](bool e) { t.servo.setEnabled(e); }));
@@ -61,12 +60,6 @@ void markerToolPage(ui2::Page *p) {
     p->add(MarkerTool(Marker::None));
     p->add(MarkerTool(Marker::Left));
     p->add(MarkerTool(Marker::Right));
-
-    static const SpinBoxU16::Input::Settings move_settings = {5, 100, 5};
-    static SpinBoxU16 speed_spin_box("Speed", SpinBoxU16::Input(move_settings, 5, [&t](uint16_t d) { t.servo.smooth.setSpeed(d); }));
-    p->add(&speed_spin_box);
-    static SpinBoxU16 accel_spin_box("Accel", SpinBoxU16::Input(move_settings, 5, [&t](uint16_t d) { t.servo.smooth.setAccel(d); }));
-    p->add(&accel_spin_box);
 }
 
 static void servicePage(ui2::Page *p) {
