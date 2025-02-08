@@ -13,7 +13,6 @@ namespace hardware {
         struct Settings {
             /// Скорость [deg / s]
             uint8_t speed;
-
             /// Ускорение [deg / s^2]
             uint8_t accel;
         };

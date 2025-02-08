@@ -1,12 +1,23 @@
-#include <Arduino.h>
-#include "vart/Devices.hpp"
-#include "misc/Macro.hpp"
-#include "VartUI.hpp"
+#define  FS_NO_GLOBALS
 
-#include "EncButton.h"
+#include <Arduino.h>
+#include <SPIFFS.h>
+#include <SD.h>
+#include <EncButton.h>
+
+#include "VartUI.hpp"
+#include "misc/Macro.hpp"
+
+#include "vart/Device.hpp"
 #include "vart/util/Pins.hpp"
 
+#include "ui2/Window.hpp"
 #include "ui2/impl/FileWidget.hpp"
+#include "ui2/impl/OledDisplay.hpp"
+
+#include "bytelang/impl/VartInterpreter.hpp"
+#include "bytelang/test/MockStream.hpp"
+#include "bytelang/core/MemIO.hpp"
 
 
 using vart::Pins;
@@ -18,13 +29,14 @@ static ui2::Page *after_print_page = nullptr;
 [[noreturn]] static void bytecodeExecuteTask(void *v) {
     auto stream = static_cast<Stream *>(v);
 
-    vart::context.progress = 0;
+    auto &w = ui2::Window::getInstance();
+    auto &dev = vart::Device::getInstance();
 
-    vart::window.setPage(printing_page);
+    dev.context.progress = 0;
 
-    vart::context.quit_code = vart::interpreter.run(*stream, vart::context);
-
-    vart::window.setPage(after_print_page);
+    w.setPage(printing_page);
+    dev.context.quit_code = bytelang::impl::VartInterpreter::getInstance().run(*stream);
+    w.setPage(after_print_page);
 
     vTaskDelete(nullptr);
     while (true) { delay(1); }
@@ -41,11 +53,7 @@ static void startPrintingTask(Stream &stream) {
     );
 };
 
-void selectFilePage(
-    ui2::Page *p,
-    fs::FS &file_sys,
-    const std::function<void()> &on_reload
-) {
+void selectFilePage(ui2::Page *p, fs::FS &file_sys, const std::function<void()> &on_reload) {
     using ui2::impl::Button;
     using ui2::impl::FileWidget;
 
@@ -95,7 +103,7 @@ void testsPage(ui2::Page *p) {
     selectFilePage(p->add("SPIFFS"), SPIFFS, spiffs_reload);
 
     auto sd_reload = []() {
-        if (SD.begin(vart::Pins::SdCs)) { return; }
+        if (SD.begin(Pins::SdCs)) { return; }
         Serial.println("An Error has occurred while mounting SD");
     };
 
@@ -109,20 +117,22 @@ static void buildUI(ui2::Page &p) {
     movementPage(p.add("Movement"));
     markerToolPage(p.add("Marker Tool"));
 
-    printing_page = new ui2::Page(vart::window, "Printing...");
+    auto &w = ui2::Window::getInstance();
+
+    printing_page = new ui2::Page(w, "Printing...");
     printingPage(printing_page);
 
-    after_print_page = new ui2::Page(vart::window, "Printing End");
+    after_print_page = new ui2::Page(w, "Printing End");
     afterPrint(after_print_page);
 }
 
-[[noreturn]] static void uiInputTask(void *) {
+[[noreturn]] static void uiTaskI(void *) {
     using ui2::Event;
 
     auto eb = EncButton(Pins::UserEncoderA, Pins::UserEncoderB, Pins::UserEncoderButton);
-    auto &w = vart::window;
+    auto &w = ui2::Window::getInstance();
 
-    w.addEvent(ui2::Event::ForceUpdate);
+    w.addEvent(Event::ForceUpdate);
 
     while (true) {
         eb.tick();
@@ -135,21 +145,24 @@ static void buildUI(ui2::Page &p) {
     }
 }
 
-[[noreturn]] static void uiDisplayTask(void *) {
-    vart::window.display.init();
-    buildUI(vart::window.root);
+[[noreturn]] static void uiTaskD(void *) {
+    auto &display = ui2::impl::OledDisplay::getInstance();
+    display.oled.init();
+    auto &w = ui2::Window::getInstance(display);
+
+    buildUI(w.root);
 
     while (true) {
-        vart::window.pull();
+        w.pull();
         taskYIELD();
     }
 }
 
 [[noreturn]] static void servoTask(void *) {
-    auto &controller = vart::device.planner.getController();
+    auto &dev = vart::Device::getInstance();
+    auto &servo = dev.tool.servo;
+    auto &controller = dev.planner.getController();
     const auto update_period_ms = controller.getUpdatePeriodMs();
-
-    auto &servo = vart::device.tool.servo;
 
     analogWriteFrequency(30000);
 
@@ -164,13 +177,12 @@ static void buildUI(ui2::Page &p) {
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 
-
 void setup() {
-    SPI.begin(Pins::SdClk, Pins::SdMiso, Pins::SdMosi, Pins::SdCs);
-    createStaticTask(uiDisplayTask, 4096, 1)
-    createStaticTask(uiInputTask, 4096, 1)
+    createStaticTask(uiTaskD, 4096, 1)
+    createStaticTask(uiTaskI, 4096, 1)
     createStaticTask(servoTask, 4096, 1)
 
+    SPI.begin(Pins::SdClk, Pins::SdMiso, Pins::SdMosi, Pins::SdCs);
     Serial.begin(115200);
 }
 

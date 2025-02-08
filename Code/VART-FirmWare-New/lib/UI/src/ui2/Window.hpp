@@ -10,28 +10,37 @@ namespace ui2 {
     /// Окно графического интерфейса
     struct Window {
 
-        static constexpr int MAX_EVENTS = 16;
+        static constexpr int MAX_EVENTS = 8;
 
         /// Дисплей для отображения графики
-        abc::Display &display;
+        abc::Display *display{nullptr};
 
         /// Главная страница
-        Page root = Page(*this, "Main");
+        Page root{Page(*this, "Main")};
 
         /// Отображаемая страница
-        Page *current_page = &root;
+        Page *current_page{&root};
 
         /// Очередь событий
         std::queue<Event> events;
 
-        explicit Window(abc::Display &display) :
-            display(display) {}
+        static Window &getInstance(abc::Display &display) {
+            Window &w = getInstance();
+            w.display = &display;
+            return w;
+        }
+
+        /// Получить экземпляр окна
+        static Window &getInstance() {
+            static Window instance;
+            return instance;
+        }
 
         /// Сменить страницу
         void setPage(Page *new_page) {
-            display.clear();
             current_page = new_page;
-            current_page->render(display);
+            display->clear();
+            renderCurrentPage();
         }
 
         /// Добавить событие
@@ -47,12 +56,25 @@ namespace ui2 {
             events.pop();
         }
 
+        // Запрет копирования и присваивания
+        Window(const Window &) = delete;
+
+        Window &operator=(const Window &) = delete;
+
     private:
 
+        Window() = default;
+
+        /// Отобразить текущую страницу
+        void renderCurrentPage() const {
+            if (display == nullptr) { return; }
+            current_page->render(*display);
+        }
+
         /// Вызвать событие
-        void onEvent(Event event) {
+        void onEvent(Event event) const {
             current_page->onEvent(event);
-            current_page->render(display);
+            renderCurrentPage();
         }
     };
 }

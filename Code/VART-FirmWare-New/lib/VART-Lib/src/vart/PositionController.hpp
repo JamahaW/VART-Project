@@ -1,21 +1,16 @@
-
-#pragma  once
+#pragma once
 
 #include "vart/Area.hpp"
 #include "vart/Pulley.hpp"
 
 
 namespace vart {
-
     /// Контроллер положения плоттера на рабочей области
     struct PositionController {
-
         /// Рабочая область
         Area area;
-
         /// Левый привод шкива
         Pulley left_pulley;
-
         /// Правый привод шкива
         Pulley right_pulley;
 

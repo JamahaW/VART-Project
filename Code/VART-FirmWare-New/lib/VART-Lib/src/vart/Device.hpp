@@ -5,25 +5,32 @@
 
 
 namespace vart {
-
-    /// Настройки устройства
-    struct DeviceSettings {
-        hardware::ServoMotor::Settings servomotor;
-        Pulley::Settings pulley;
-        Area::Settings area;
-        Planner::Settings planner;
-        MarkerPrintTool::Settings marker_tool;
-        hardware::ServoMG90S::Settings servo_mg90s;
-    };
-
-    /// Устройство (VART)
     struct Device {
-        /// Планировщик перемещений
+
+        struct Settings {
+            hardware::ServoMotor::Settings servomotor;
+            hardware::ServoMG90S::Settings servo_mg90s;
+            Area::Settings area;
+            Pulley::Settings pulley;
+            Planner::Settings planner;
+            MarkerPrintTool::Settings marker_tool;
+        };
+
+        struct Context {
+            int progress;
+            int quit_code;
+        };
+
+        Context context;
+
         Planner planner;
 
-        /// Инструмент печати
         MarkerPrintTool tool;
+
+        static Device &getInstance();
+
+        Device(const Device &) = delete;
+
+        Device &operator=(const Device &) = delete;
     };
-
-
 }

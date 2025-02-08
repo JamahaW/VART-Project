@@ -10,9 +10,6 @@ namespace ui2 {
 
             using PixelPosition = uint8_t;
 
-            /// Инициализировать дисплей
-            virtual void init() = 0;
-
             /// Установить курсор
             virtual void setCursor(PixelPosition x, PixelPosition y) = 0;
 

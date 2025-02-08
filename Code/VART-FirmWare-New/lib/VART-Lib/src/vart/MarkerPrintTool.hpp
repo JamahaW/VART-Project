@@ -13,13 +13,10 @@ namespace vart {
         enum Marker : unsigned char {
             /// Никакой (Маркер не выбран)
             None = 0x00,
-
             /// Левый
             Left = 0x01,
-
             /// Правый
             Right = 0x02,
-
             /// Константа для определения общего кол-ва инструментов
             TotalCount
         };
@@ -29,10 +26,8 @@ namespace vart {
 
         /// Параметры инструмента печати
         struct Settings {
-
             /// Допустимый диапазон углов
             Range<Angle> angle_range;
-
             /// Углы для каждого маркера
             std::array<Angle, Marker::TotalCount> positions;
         };
@@ -62,5 +57,7 @@ namespace vart {
         void setActiveTool(Marker marker) {
             servo.setAngle(settings.positions.at(marker));
         }
+
+
     };
 }
