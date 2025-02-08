@@ -35,25 +35,19 @@ namespace vart {
 
             /// Углы для каждого маркера
             std::array<Angle, Marker::TotalCount> positions;
-
-            /// Длительность смены инструмента в миллисекундах
-            uint32_t tool_change_duration_ms;
         };
 
     private:
 
-        /// Сервопривод для выбора маркеров
-        const hardware::ServoMG90S servo;
-
         /// Настройки
-        Settings &settings;
-
-        /// Инструмент готов
-        bool is_ready{false};
+        Settings settings;
 
     public:
 
-        explicit MarkerPrintTool(Settings &settings, hardware::ServoMG90S servo) :
+        /// Сервопривод для выбора маркеров
+        hardware::ServoMG90S servo;
+
+        explicit MarkerPrintTool(Settings settings, hardware::ServoMG90S servo) :
             servo(std::move(servo)), settings(settings) {}
 
         /// Обновить угол для маркера
@@ -66,22 +60,7 @@ namespace vart {
 
         /// Выбрать маркер
         void setActiveTool(Marker marker) {
-            is_ready = false;
             servo.setAngle(settings.positions.at(marker));
-            delay(settings.tool_change_duration_ms);
-            is_ready = true;
-        }
-
-        /// Инструмент готов к смене
-        bool isReady() const { return is_ready; }
-
-        void setChangeDuration(uint32_t ms) { settings.tool_change_duration_ms = ms; }
-
-        uint32_t getChangeDuration() const { return settings.tool_change_duration_ms; }
-
-        void setEnabled(bool enabled) {
-            if (enabled) { servo.enable(); }
-            else { servo.disable(); }
         }
     };
 }

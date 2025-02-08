@@ -1,11 +1,12 @@
 #pragma once
 
 #include <vector>
-#include <memory>
 #include "Arduino.h"
-#include "abc/Display.hpp"
-#include "abc/Widget.hpp"
-#include "Event.hpp"
+
+#include "ui2/Event.hpp"
+#include "ui2/abc/Widget.hpp"
+#include "ui2/abc/Display.hpp"
+#include "ui2/impl/Text.hpp"
 
 
 namespace ui2 {
@@ -17,7 +18,7 @@ namespace ui2 {
         Window &window;
 
         /// Заголовок страницы
-        const char *title;
+        const impl::Text title;
 
         /// Виджет для перехода на эту страницу
         abc::Widget *to_this_page;
@@ -38,16 +39,20 @@ namespace ui2 {
 
         /// Отрисовать страницу
         void render(abc::Display &display) const {
-            display.setCursor(0, 0);
-            display.println(title);
-
             const auto gui_last_item_index = display.getRows() - 3;
+
+            display.setCursor(0, 0);
+
+            title.render(display);
+            display.println();
 
             uint8_t begin = max(cursor - gui_last_item_index, 0);
             uint8_t end = _min(widgets.size(), gui_last_item_index + 1) + begin;
 
             for (int index = begin; index < end; index++) {
-                widgets.at(index)->render(display, index == cursor);
+                display.setTextInverted(index == cursor);
+                widgets.at(index)->render(display);
+                display.setTextInverted(false);
                 display.println();
             }
         }

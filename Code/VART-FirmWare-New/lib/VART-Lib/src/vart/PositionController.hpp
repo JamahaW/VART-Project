@@ -8,22 +8,16 @@
 namespace vart {
 
     /// Контроллер положения плоттера на рабочей области
-    class PositionController {
+    struct PositionController {
 
-    private:
         /// Рабочая область
-        Area &area;
+        Area area;
 
         /// Левый привод шкива
-        Pulley &left_pulley;
+        Pulley left_pulley;
 
         /// Правый привод шкива
-        Pulley &right_pulley;
-
-    public:
-
-        explicit PositionController(Area &area, Pulley &left_pulley, Pulley &right_pulley) :
-            area(area), left_pulley(left_pulley), right_pulley(right_pulley) {}
+        Pulley right_pulley;
 
         /// Обновление регуляторов шкивов
         void update() {
@@ -66,7 +60,7 @@ namespace vart {
         }
 
         /// Расчитать текущее положение
-        Vector2D getCurrentPosition() {
+        Vector2D getCurrentPosition() const {
             return area.calcForward(left_pulley.getCurrentRopeLength(), right_pulley.getCurrentRopeLength());
         }
 
@@ -88,6 +82,7 @@ namespace vart {
 
         /// Установить смещения тросов
         void setLeftOffset(int32_t left) { left_pulley.rope_offset_mm = left; }
+
         void setRightOffset(int32_t right) { right_pulley.rope_offset_mm = right; }
 
     };

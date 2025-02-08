@@ -1,10 +1,13 @@
 #include "vart/Devices.hpp"
 
 
+
 struct OLEDDisplay : ui2::abc::Display {
     gfx::OLED oled;
 
-    void init() override { oled.init(); }
+    void init() override {
+        oled.init();
+    }
 
     size_t write(uint8_t uint_8) override { return oled.write(uint_8); }
 

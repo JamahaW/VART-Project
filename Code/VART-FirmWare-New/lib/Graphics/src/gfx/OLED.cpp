@@ -170,24 +170,18 @@ size_t gfx::OLED::write(uint8_t data) {
 
     for (uint8_t offset = 0; offset < width_6; offset += oled_font_width, cursor_x++) {
         col = OLED_FONT_GET_COL(bits, offset) ^ text_mask;
-
-        for (uint8_t t = 0; t < 1; t++) {
-            sendByte(col);
-        }
+        sendByte(col);
     }
 
-
     sendByte(text_mask);
-
     endTransmission();
 
     cursor_x++;
     return 1;
 }
 
-void gfx::OLED::init(uint32_t clock) {
+void gfx::OLED::init() {
     Wire.begin();
-    Wire.setClock(clock);
 
     beginCommand();
     for (uint8_t command: oled_init_commands) {

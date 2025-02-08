@@ -11,19 +11,18 @@
 
 using vart::Pins;
 
-
 static ui2::Page *printing_page = nullptr;
 
 static ui2::Page *after_print_page = nullptr;
 
 [[noreturn]] static void bytecodeExecuteTask(void *v) {
-    auto &stream = *(Stream *) v;
+    auto stream = static_cast<Stream *>(v);
 
     vart::context.progress = 0;
 
     vart::window.setPage(printing_page);
 
-    vart::context.quit_code = vart::interpreter.run(stream, vart::context);
+    vart::context.quit_code = vart::interpreter.run(*stream, vart::context);
 
     vart::window.setPage(after_print_page);
 
@@ -117,35 +116,46 @@ static void buildUI(ui2::Page &p) {
     afterPrint(after_print_page);
 }
 
-
-[[noreturn]] static void uiTask(void *) {
+[[noreturn]] static void uiInputTask(void *) {
     using ui2::Event;
 
-    vart::window.display.init();
-    buildUI(vart::window.root);
-    vart::window.onEvent(Event::ForceUpdate);
+    auto eb = EncButton(Pins::UserEncoderA, Pins::UserEncoderB, Pins::UserEncoderButton);
+    auto &w = vart::window;
 
-    static EncButton eb(Pins::UserEncoderA, Pins::UserEncoderB, Pins::UserEncoderButton);
+    w.addEvent(ui2::Event::ForceUpdate);
 
     while (true) {
         eb.tick();
-        if (eb.left()) { vart::window.onEvent(Event::NextWidget); }
-        if (eb.right()) { vart::window.onEvent(Event::PreviousWidget); }
-        if (eb.rightH()) { vart::window.onEvent(Event::StepUp); }
-        if (eb.leftH()) { vart::window.onEvent(Event::StepDown); }
-        if (eb.click()) { vart::window.onEvent(Event::Click); }
+        if (eb.left()) { w.addEvent(Event::NextWidget); }
+        if (eb.right()) { w.addEvent(Event::PreviousWidget); }
+        if (eb.rightH()) { w.addEvent(Event::StepUp); }
+        if (eb.leftH()) { w.addEvent(Event::StepDown); }
+        if (eb.click()) { w.addEvent(Event::Click); }
         taskYIELD();
     }
 }
 
-[[noreturn]] static void posTask(void *) {
-    auto &controller = vart::context.planner.getController();
+[[noreturn]] static void uiDisplayTask(void *) {
+    vart::window.display.init();
+    buildUI(vart::window.root);
+
+    while (true) {
+        vart::window.pull();
+        taskYIELD();
+    }
+}
+
+[[noreturn]] static void servoTask(void *) {
+    auto &controller = vart::device.planner.getController();
     const auto update_period_ms = controller.getUpdatePeriodMs();
+
+    auto &servo = vart::device.tool.servo;
 
     analogWriteFrequency(30000);
 
     while (true) {
         controller.update();
+        servo.update();
         vTaskDelay(update_period_ms);
         taskYIELD();
     }
@@ -157,8 +167,9 @@ static void buildUI(ui2::Page &p) {
 
 void setup() {
     SPI.begin(Pins::SdClk, Pins::SdMiso, Pins::SdMosi, Pins::SdCs);
-    createStaticTask(uiTask, 4096, 1)
-    createStaticTask(posTask, 4096, 1)
+    createStaticTask(uiDisplayTask, 4096, 1)
+    createStaticTask(uiInputTask, 4096, 1)
+    createStaticTask(servoTask, 4096, 1)
 
     Serial.begin(115200);
 }

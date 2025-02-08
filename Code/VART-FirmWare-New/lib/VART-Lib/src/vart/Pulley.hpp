@@ -23,7 +23,7 @@ namespace vart {
         };
 
         /// Сервопривод
-        hardware::ServoMotor &servo;
+        hardware::ServoMotor servo;
 
     private:
 
@@ -35,7 +35,7 @@ namespace vart {
         /// Смещение троса
         int32_t rope_offset_mm{0};
 
-        explicit Pulley(const Settings &settings, hardware::ServoMotor &servo) :
+        explicit Pulley(const Settings &settings, hardware::ServoMotor &&servo) :
             settings(settings), servo(servo) {}
 
 

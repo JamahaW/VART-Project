@@ -4,15 +4,15 @@
 #include "ui2/abc/Display.hpp"
 #include "ui2/Window.hpp"
 #include "ui2/Page.hpp"
-#include "ui2/impl/Label.hpp"
+#include "ui2/impl/Text.hpp"
 #include "ui2/impl/Button.hpp"
-#include "ui2/impl/SpinBox.hpp"
+#include "ui2/impl/NamedSpinBox.hpp"
 #include "vart/util/Pins.hpp"
 
 
 using vart::Pins;
 using ui2::impl::Label;
-using ui2::impl::SpinBox;
+using ui2::impl::NamedSpinBox;
 using uButton = ui2::impl::Button;
 using ui2::Event;
 
@@ -44,7 +44,7 @@ void cbs(int v) {
     Serial.println(v);
 }
 
-const SpinBox<int>::Settings s = {
+const NamedSpinBox<int>::Settings s = {
     100,
     200,
     5,

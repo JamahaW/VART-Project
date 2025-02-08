@@ -29,18 +29,18 @@ namespace hardware {
         };
 
         /// Настройки
-        Settings &settings;
+        const Settings &settings;
 
     private:
 
         /// Энкодер
-        Encoder &encoder;
+        Encoder encoder;
 
         /// Драйвер
-        const MotorDriverL293 &driver;
+        const MotorDriverL293 driver;
 
         /// Регулятор ШИМ по положению
-        pid::Regulator position_regulator;
+        const pid::Regulator position_regulator;
 
         /// Целевое положение
         int32_t target_position_ticks{0};
@@ -50,8 +50,7 @@ namespace hardware {
 
     public:
 
-
-        explicit ServoMotor(Settings &settings, const MotorDriverL293 &driver, Encoder &encoder) :
+        explicit ServoMotor(const Settings &settings, MotorDriverL293 &&driver, Encoder &&encoder) :
             settings(settings),
             encoder(encoder), driver(driver),
             position_regulator(settings.position) {}
@@ -95,29 +94,6 @@ namespace hardware {
         /// Получить период обновления регулятора в секундах
         float getUpdatePeriodSeconds() const {
             return settings.update_period_seconds;
-        }
-
-        const pid::PidSettings &tunePositionRegulator(int32_t target_position) {
-
-            const auto getInput = [this]() -> float {
-                return float(this->getCurrentPosition());
-            };
-
-            const auto setOutput = [this](float speed) -> void {
-                this->driver.setPower(int32_t(speed));
-            };
-
-            setCurrentPosition(0);
-
-            position_regulator.tune(float(target_position), getUpdatePeriodMs(), getInput, setOutput);
-
-            driver.setPower(0);
-
-            const pid::PidSettings &ret = position_regulator.settings.pid;
-
-            logPid(ret);
-
-            return ret;
         }
 
         /// Обновить регулятор

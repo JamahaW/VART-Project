@@ -16,11 +16,11 @@ namespace ui2 {
             explicit ProgressBar(T &value) :
                 value(value) {}
 
-            void render(abc::Display &display, bool is_selected) const override {
+        protected:
+            void render(abc::Display &display) const override {
                 const uint8_t bars_total = display.getWidth() - 3;
                 const uint8_t bars = value * bars_total / 100;
 
-                display.setTextInverted(is_selected);
                 display.write('[');
 
                 for (uint8_t i = 0; i < bars_total; i++) {
@@ -30,10 +30,7 @@ namespace ui2 {
                 display.write(']');
                 display.write(' ');
                 display.print(value);
-                display.setTextInverted(false);
             }
-
-        private:
 
 
         };

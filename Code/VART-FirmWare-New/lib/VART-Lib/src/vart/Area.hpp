@@ -61,7 +61,8 @@ namespace vart {
             l = std::hypot(position.x + w, i);
             r = std::hypot(position.x - w, i);
         }
-
+		
+		/// Получить текущее положение по длинам тросов
         Vector2D calcForward(double l, double r) const {
             auto x = (l - r) * (l + r) / (w * 4);
             return {

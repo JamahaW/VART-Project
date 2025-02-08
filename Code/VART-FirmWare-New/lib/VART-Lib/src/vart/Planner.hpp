@@ -45,9 +45,6 @@ namespace vart {
 
         const Settings &settings;
 
-        /// Готов к следующему шагу
-        bool is_ready{false};
-
         /// Текущий режим работы
         Mode mode{settings.default_mode};
 
@@ -58,15 +55,15 @@ namespace vart {
         double accel_set{settings.default_accel};
 
         /// Контроллер позиции
-        PositionController &controller;
+        PositionController controller;
 
     public:
 
-        explicit Planner(const Settings &settings, PositionController &controller) :
+        explicit Planner(const Settings &settings, PositionController &&controller) :
             controller(controller), settings(settings) {}
 
         /// Получить контроллер позиции
-        PositionController &getController() const { return controller; }
+        PositionController &getController() { return controller; }
 
         /// Установить режим работы
         void setMode(Mode new_mode) { mode = new_mode; }
@@ -83,12 +80,8 @@ namespace vart {
         /// Получить текущую установку ускорения
         double getAccel() const { return accel_set; }
 
-        /// Планировщик завершил перемещение и готов к следующему
-        bool isReady() const { return is_ready; }
-
         /// Перейти в позицию
         void moveTo(Vector2D position) {
-            is_ready = false;
 
             switch (mode) {
                 case Mode::Position:
@@ -101,8 +94,6 @@ namespace vart {
                     goConstAccel(position);
                     break;
             }
-
-            is_ready = true;
         }
 
     private:

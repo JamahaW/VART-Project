@@ -45,7 +45,7 @@ namespace gfx {
         size_t write(uint8_t data) override;
 
         /// @brief инициализация дисплея
-        void init(uint32_t clock = 200000UL);
+        void init();
 
         /// @brief Очистить весь дисплей
         void clear();

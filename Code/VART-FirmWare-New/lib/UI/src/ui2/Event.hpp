@@ -2,7 +2,6 @@
 
 namespace ui2 {
     enum class Event : char {
-
         /// Принудительно Обновить страницу
         ForceUpdate,
 

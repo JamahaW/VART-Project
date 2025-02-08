@@ -1,24 +1,22 @@
 #pragma once
 
 #include "ui2/Window.hpp"
-#include "vart/Planner.hpp"
-#include "vart/MarkerPrintTool.hpp"
 #include "bytelang/StreamInterpreter.hpp"
-#include "gfx/OLED.hpp"
-
+#include "vart/Device.hpp"
+#include <gfx/OLED.hpp>
 
 namespace vart {
     /// Окно графического интерфейса
     extern ui2::Window window;
 
+    /// Действующие настройки устройства
+    extern const DeviceSettings settings;
+
+    /// Устройство
+    extern Device device;
+
     /// Контекст для исполнения инструкций
-    struct VartContext {
-        /// Используемый планировщик
-        Planner &planner;
-
-        /// Используемый инструмент
-        MarkerPrintTool &tool;
-
+    struct Context {
         /// Прогресс печати
         int progress;
 
@@ -26,10 +24,10 @@ namespace vart {
         int quit_code;
     };
 
-    extern VartContext context;
+    extern Context context;
 
     /// Конкретизация интерпретатора
-    using VartIntepreter = bytelang::StreamInterpreter<VartContext>;
+    using VartIntepreter = bytelang::StreamInterpreter<Context>;
 
     /// Потоковый интерпретатор команд
     extern VartIntepreter interpreter;

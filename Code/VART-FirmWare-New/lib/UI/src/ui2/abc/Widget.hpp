@@ -9,11 +9,11 @@ namespace ui2 {
         /// Виджет
         struct Widget {
 
-            /// Отобразить виджет на странице
-            virtual void render(Display &display, bool is_selected) const = 0;
-
             /// Отреагировать на событие
             virtual void onEvent(Event event) {};
+
+            /// Отрисовать сам виджет
+            virtual void render(abc::Display &display) const = 0;
         };
     }
 }
