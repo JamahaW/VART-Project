@@ -9,31 +9,28 @@ namespace ui2 {
 
     /// Окно графического интерфейса
     struct Window {
+    private:
 
         static constexpr int MAX_EVENTS = 8;
 
         /// Дисплей для отображения графики
         abc::Display *display{nullptr};
-
-        /// Главная страница
-        abc::Page root{abc::Page("Main")};
-
         /// Отображаемая страница
-        abc::Page *current_page{&root};
-
+        abc::Page *current_page{nullptr};
         /// Очередь событий
         std::queue<Event> events;
 
-        static Window &getInstance(abc::Display &display) {
-            Window &w = getInstance();
-            w.display = &display;
-            return w;
-        }
+    public:
 
         /// Получить экземпляр окна
         static Window &getInstance() {
             static Window instance;
             return instance;
+        }
+
+        /// Установить дисплей для вывода
+        void setDisplay(abc::Display &display) {
+            this->display = &display;
         }
 
         /// Сменить страницу
@@ -68,11 +65,13 @@ namespace ui2 {
         /// Отобразить текущую страницу
         void renderCurrentPage() const {
             if (display == nullptr) { return; }
+            if (current_page == nullptr) { return; }
             current_page->render(*display);
         }
 
         /// Вызвать событие
         void onEvent(Event event) const {
+            if (current_page == nullptr) { return; }
             current_page->onEvent(event);
             renderCurrentPage();
         }

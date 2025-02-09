@@ -29,7 +29,7 @@ namespace ui2 {
             void add(Widget *widget) { widgets.push_back(widget); }
 
             /// Добавить вложенную страницу
-            Page *add(Page *child);
+            void add(Page *child);
 
             /// Отрисовать страницу
             void render(Display &display) const {
@@ -45,7 +45,9 @@ namespace ui2 {
 
                 for (int index = begin; index < end; index++) {
                     display.setTextInverted(index == cursor);
+
                     widgets.at(index)->render(display);
+
                     display.setTextInverted(false);
                     display.println();
                 }

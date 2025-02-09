@@ -1,6 +1,6 @@
 #pragma once
 
-#include "functional"
+#include <functional>
 
 #include "ui2/abc/Widget.hpp"
 #include "Text.hpp"
