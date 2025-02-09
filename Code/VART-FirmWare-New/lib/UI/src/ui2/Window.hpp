@@ -16,7 +16,7 @@ namespace ui2 {
         abc::Display *display{nullptr};
 
         /// Главная страница
-        Page root{Page(*this, "Main")};
+        Page root{Page("Main")};
 
         /// Отображаемая страница
         Page *current_page{&root};

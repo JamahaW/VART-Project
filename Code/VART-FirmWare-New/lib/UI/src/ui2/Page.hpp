@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <functional>
 #include "Arduino.h"
 
 #include "ui2/Event.hpp"
@@ -11,31 +12,24 @@
 
 namespace ui2 {
 
-    struct Window;
-
     /// Отображаемая страница
     struct Page {
-        Window &window;
-
         /// Заголовок страницы
         const impl::Text title;
-
         /// Виджет для перехода на эту страницу
         abc::Widget *to_this_page;
-
         /// Виджеты
         std::vector<abc::Widget *> widgets;
-
         /// Текущий индекс выбранного виджета
-        int cursor = 0;
+        int cursor{0};
 
-        explicit Page(Window &window, const char *title);
+        explicit Page(const char *title, const std::function<void(Page &)> &on_entry = nullptr);
 
         /// Добавить виджет
         void add(abc::Widget *widget) { widgets.push_back(widget); }
 
         /// Добавить вложенную страницу
-        Page *add(const char *child);
+        Page *add(Page *child);
 
         /// Отрисовать страницу
         void render(abc::Display &display) const {

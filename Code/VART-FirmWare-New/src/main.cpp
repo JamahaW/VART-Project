@@ -21,10 +21,11 @@
 
 
 using vart::Pins;
+using ui2::Page;
 
-static ui2::Page *printing_page = nullptr;
+static Page *printing_page = nullptr;
 
-static ui2::Page *after_print_page = nullptr;
+static Page *after_print_page = nullptr;
 
 [[noreturn]] static void bytecodeExecuteTask(void *v) {
     auto stream = static_cast<Stream *>(v);
@@ -52,13 +53,14 @@ static void startPrintingTask(Stream &stream) {
     );
 };
 
-void selectFilePage(ui2::Page *p, fs::FS &file_sys, const std::function<void()> &on_reload) {
+void selectFilePage(Page *p, fs::FS &file_sys, const std::function<void()> &on_reload) {
     using ui2::impl::Button;
     using ui2::impl::FileWidget;
 
     auto reload_func = [p, &file_sys, on_reload]() {
-        p->clearWidgets(1);
         on_reload();
+
+        p->clearWidgets(1);
 
         fs::File root = file_sys.open("/");
         fs::File file = root.openNextFile();
@@ -76,7 +78,7 @@ void selectFilePage(ui2::Page *p, fs::FS &file_sys, const std::function<void()> 
     p->add(new Button("Reload", reload_func));
 }
 
-void testsPage(ui2::Page *p) {
+void testsPage(Page *p) {
     using ui2::impl::Button;
 
     static bytelang::primitive::u8 buf[] = {
@@ -99,29 +101,27 @@ void testsPage(ui2::Page *p) {
         Serial.println("An Error has occurred while mounting SPIFFS");
     };
 
-    selectFilePage(p->add("SPIFFS"), SPIFFS, spiffs_reload);
+    selectFilePage(p->add(new Page("SPIFFS")), SPIFFS, spiffs_reload);
 
     auto sd_reload = []() {
         if (SD.begin(Pins::SdCs)) { return; }
         Serial.println("An Error has occurred while mounting SD");
     };
 
-    selectFilePage(p->add("SD"), SD, sd_reload);
+    selectFilePage(p->add(new Page("SD")), SD, sd_reload);
 }
 
-static void buildUI(ui2::Page &p) {
-    testsPage(p.add("- MEDIA -"));
-    workAreaPage(p.add("Work Area"));
-    servicePage(p.add("Service"));
-    movementPage(p.add("Movement"));
-    markerToolPage(p.add("Marker Tool"));
+static void buildUI(Page &p) {
+    testsPage(p.add(new Page("- MEDIA -")));
+    workAreaPage(p.add(new Page("Work Area")));
+    servicePage(p.add(new Page("Service")));
+    movementPage(p.add(new Page("Movement")));
+    markerToolPage(p.add(new Page("Marker Tool")));
 
-    auto &w = ui2::Window::getInstance();
-
-    printing_page = new ui2::Page(w, "Printing...");
+    printing_page = new Page("Printing...");
     printingPage(printing_page);
 
-    after_print_page = new ui2::Page(w, "Printing End");
+    after_print_page = new Page("Printing End");
     afterPrint(after_print_page);
 }
 

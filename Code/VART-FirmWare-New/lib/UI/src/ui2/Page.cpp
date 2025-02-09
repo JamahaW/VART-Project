@@ -1,14 +1,15 @@
 #include "Page.hpp"
+#include "ui2/impl/PageSetterButton.hpp"
 
-#include "impl/PageSetterButton.hpp"
 
+ui2::Page *ui2::Page::add(Page *child) {
+    Page *parent = this;
 
-ui2::Page *ui2::Page::add(const char *child) {
-    auto child_page = new Page(window, child);
-    add(new impl::PageSetterButton(*child_page, window));
-    child_page->add(to_this_page);
-    return child_page;
+    parent->add(child->to_this_page);
+    child->add(parent->to_this_page);
+
+    return child;
 }
 
-ui2::Page::Page(ui2::Window &window, const char *title) :
-    title(title), window(window), to_this_page(new impl::PageSetterButton(*this, window)) {}
+ui2::Page::Page(const char *title, const std::function<void(Page &)> &on_entry) :
+    title(title), to_this_page{new impl::PageSetterButton(*this, on_entry)} {}
