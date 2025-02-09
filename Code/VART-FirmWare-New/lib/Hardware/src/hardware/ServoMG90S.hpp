@@ -22,8 +22,11 @@ namespace hardware {
             pin{pin} {}
 
         void setEnabled(bool enabled) {
-            if (enabled) { backend.attach(pin); }
-            else { backend.detach(); }
+            if (enabled) {
+                backend.attach(pin);
+            } else {
+                backend.detach();
+            }
         }
 
         /// Установить угол

@@ -3,7 +3,7 @@
 #include <Stream.h>
 #include <esp32-hal.h>
 #include "bytelang/Reader.hpp"
-#include "bytelang/primitives.hpp"
+#include "bytelang/primitive.hpp"
 
 
 namespace bytelang {

@@ -3,10 +3,10 @@
 #include "gfx/OLED.hpp"
 #include "ui2/abc/Display.hpp"
 #include "ui2/Window.hpp"
-#include "ui2/Page.hpp"
-#include "ui2/impl/Text.hpp"
-#include "ui2/impl/Button.hpp"
-#include "ui2/impl/NamedSpinBox.hpp"
+#include "ui2/abc/Page.hpp"
+#include "ui2/impl/widget/Text.hpp"
+#include "ui2/impl/widget/Button.hpp"
+#include "ui2/impl/widget/NamedSpinBox.hpp"
 #include "vart/util/Pins.hpp"
 
 

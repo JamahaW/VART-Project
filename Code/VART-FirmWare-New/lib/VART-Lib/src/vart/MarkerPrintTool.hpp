@@ -41,8 +41,8 @@ namespace vart {
         /// Сервопривод для выбора маркеров
         hardware::ServoMG90S servo;
 
-        explicit MarkerPrintTool(Settings &settings, hardware::ServoMG90S servo) :
-            servo(std::move(servo)), settings(settings) {}
+        explicit MarkerPrintTool(Settings &settings, hardware::ServoMG90S &&servo) :
+            servo(servo), settings(settings) {}
 
         /// Обновить угол для маркера
         void updateToolAngle(Marker marker, Angle angle) {

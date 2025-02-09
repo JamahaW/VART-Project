@@ -1,47 +1,59 @@
-#define  FS_NO_GLOBALS
+#define FS_NO_GLOBALS
 
 #include <Arduino.h>
 #include <SPIFFS.h>
 #include <SD.h>
 #include <EncButton.h>
 
-#include "VartUI.hpp"
 #include "misc/Macro.hpp"
 
 #include "vart/Device.hpp"
 #include "vart/util/Pins.hpp"
 
 #include "ui2/Window.hpp"
-#include "ui2/impl/FileWidget.hpp"
-#include "ui2/impl/OledDisplay.hpp"
+#include "ui2/abc/Page.hpp"
+#include "ui2/impl/Page.hpp"
+#include "ui2/impl/widget/FileWidget.hpp"
+#include "ui2/impl/display/OledDisplay.hpp"
 
 #include "bytelang/impl/VartInterpreter.hpp"
 #include "bytelang/test/MockStream.hpp"
 #include "bytelang/core/MemIO.hpp"
+#include "ui2/impl/widget/Button.hpp"
 
 
 using vart::Pins;
-using ui2::Page;
+using fs::File;
 
-static Page *printing_page = nullptr;
+using ui2::abc::Page;
+using ui2::Window;
+using ui2::impl::widget::FileWidget;
+using ui2::impl::display::OledDisplay;
 
-static Page *after_print_page = nullptr;
+using bytelang::primitive::u8;
+using bytelang::core::MemIO;
+using bytelang::impl::VartInterpreter;
+using bytelang::test::MockStream;
+
+static ui2::impl::page::PrintingPage printing_page;
+
+static ui2::impl::page::WorkOverPage work_over_page;
 
 [[noreturn]] static void bytecodeExecuteTask(void *v) {
     auto stream = static_cast<Stream *>(v);
 
     auto &dev = vart::Device::getInstance();
     dev.context.progress = 0;
-    dev.context.quit_code = bytelang::impl::VartInterpreter::getInstance().run(*stream);
+    dev.context.quit_code = VartInterpreter::getInstance().run(*stream);
 
-    ui2::Window::getInstance().setPage(after_print_page);
+    Window::getInstance().setPage(work_over_page);
 
     vTaskDelete(nullptr);
     while (true) { delay(1); }
 }
 
 static void startPrintingTask(Stream &stream) {
-    ui2::Window::getInstance().setPage(printing_page);
+    Window::getInstance().setPage(printing_page);
 
     xTaskCreate(
         bytecodeExecuteTask,
@@ -53,83 +65,85 @@ static void startPrintingTask(Stream &stream) {
     );
 };
 
-void selectFilePage(Page *p, fs::FS &file_sys, const std::function<void()> &on_reload) {
-    using ui2::impl::Button;
-    using ui2::impl::FileWidget;
-
-    auto reload_func = [p, &file_sys, on_reload]() {
-        on_reload();
-
-        p->clearWidgets(1);
-
-        fs::File root = file_sys.open("/");
-        fs::File file = root.openNextFile();
-
-        while (file) {
-            if (not file.isDirectory()) {
-                p->add(new FileWidget(file, startPrintingTask));
-            }
-            file = root.openNextFile();
-        }
-
-        root.close();
-    };
-
-    p->add(new Button("Reload", reload_func));
+static void startPrintingFromFile(const fs::File &open_file) {
+    static fs::File file;
+    file = open_file;
+    startPrintingTask(file);
 }
 
-void testsPage(Page *p) {
-    using ui2::impl::Button;
-
-    static bytelang::primitive::u8 buf[] = {
+static void startPrintingFromMockStream() {
+    static u8 buf[] = {
         0x01, 0x01, 0xE8, 0x03, 0x02, 0x64, 0x03, 0x4B, 0x07, 0x00, 0x07, 0x01, 0x07, 0x02, 0x07, 0x01, 0x07,
         0x00, 0x04, 0x02, 0x05, 0x64, 0x00, 0x00, 0x00, 0x05, 0x9C, 0xFF, 0x00, 0x00, 0x05, 0x00, 0x00,
         0x00, 0x00, 0x05, 0x00, 0x00, 0x64, 0x00, 0x05, 0x00, 0x00, 0x9C, 0xFF, 0x05, 0x00, 0x00, 0x00,
         0x00, 0x01, 0xE8, 0x03, 0x00
     };
-    static bytelang::test::MockStream mock_stream(bytelang::core::MemIO(buf, sizeof(buf)));
+    static MockStream mock_stream(MemIO(buf, sizeof(buf)));
 
-    static Button start_mock_task("MockStream", []() {
-        mock_stream.reset();
-        startPrintingTask(mock_stream);
-    });
+    mock_stream.reset();
+    startPrintingTask(mock_stream);
+}
 
+static void reloadFileList(Page &page, fs::FS &file_sys) {
+    page.clearWidgets();
+
+    File root = file_sys.open("/");
+    File file = root.openNextFile();
+
+    while (file) {
+        if (not file.isDirectory()) {
+            page.add(new FileWidget(file_sys, file, startPrintingFromFile));
+        }
+        file.close();
+        file = root.openNextFile();
+    }
+
+    file.close();
+    root.close();
+}
+
+static void reloadSpiffsPage(Page &p) {
+    if (not SPIFFS.begin(false)) {
+        Serial.println("An Error has occurred while mounting SPIFFS");
+        return;
+    }
+
+    reloadFileList(p, SPIFFS);
+};
+
+static void reloadSdPage(Page &p) {
+    if (not SD.begin(Pins::SdCs)) {
+        Serial.println("An Error has occurred while mounting SD");
+        return;
+    }
+
+    reloadFileList(p, SD);
+};
+
+void mediaPage(Page *p) {
+    using ui2::impl::widget::Button;
+
+    static Button start_mock_task("MockStream", startPrintingFromMockStream);
     p->add(&start_mock_task);
 
-    auto spiffs_reload = []() {
-        if (SPIFFS.begin(false)) { return; }
-        Serial.println("An Error has occurred while mounting SPIFFS");
-    };
-
-    selectFilePage(p->add(new Page("SPIFFS")), SPIFFS, spiffs_reload);
-
-    auto sd_reload = []() {
-        if (SD.begin(Pins::SdCs)) { return; }
-        Serial.println("An Error has occurred while mounting SD");
-    };
-
-    selectFilePage(p->add(new Page("SD")), SD, sd_reload);
+    p->add(new Page("SD", reloadSdPage));
+    p->add(new Page("SPIFFS", reloadSpiffsPage));
 }
 
 static void buildUI(Page &p) {
-    testsPage(p.add(new Page("- MEDIA -")));
-    workAreaPage(p.add(new Page("Work Area")));
-    servicePage(p.add(new Page("Service")));
-    movementPage(p.add(new Page("Movement")));
-    markerToolPage(p.add(new Page("Marker Tool")));
+    mediaPage(p.add(new Page("- MEDIA -")));
+    p.add(new ui2::impl::page::WorkAreaPage());
+    p.add(new ui2::impl::page::MovementServicePage());
+    p.add(new ui2::impl::page::ToolServicePage());
 
-    printing_page = new Page("Printing...");
-    printingPage(printing_page);
-
-    after_print_page = new Page("Printing End");
-    afterPrint(after_print_page);
+    p.add(new Page("Dev", [](Page &p) { Serial.println(p.title.text); }));
 }
 
 [[noreturn]] static void uiTaskI(void *) {
     using ui2::Event;
 
     auto eb = EncButton(Pins::UserEncoderA, Pins::UserEncoderB, Pins::UserEncoderButton);
-    auto &w = ui2::Window::getInstance();
+    auto &w = Window::getInstance();
 
     w.addEvent(Event::ForceUpdate);
 
@@ -145,9 +159,9 @@ static void buildUI(Page &p) {
 }
 
 [[noreturn]] static void uiTaskD(void *) {
-    auto &display = ui2::impl::OledDisplay::getInstance();
+    auto &display = OledDisplay::getInstance();
     display.oled.init();
-    auto &w = ui2::Window::getInstance(display);
+    auto &w = Window::getInstance(display);
 
     buildUI(w.root);
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <queue>
-#include "Page.hpp"
+#include "ui2/abc/Page.hpp"
 #include "Event.hpp"
 
 
@@ -16,10 +16,10 @@ namespace ui2 {
         abc::Display *display{nullptr};
 
         /// Главная страница
-        Page root{Page("Main")};
+        abc::Page root{abc::Page("Main")};
 
         /// Отображаемая страница
-        Page *current_page{&root};
+        abc::Page *current_page{&root};
 
         /// Очередь событий
         std::queue<Event> events;
@@ -37,8 +37,8 @@ namespace ui2 {
         }
 
         /// Сменить страницу
-        void setPage(Page *new_page) {
-            current_page = new_page;
+        void setPage(abc::Page &new_page) {
+            current_page = &new_page;
             display->clear();
             renderCurrentPage();
         }

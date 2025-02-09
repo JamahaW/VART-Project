@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Stream.h>
-#include "primitives.hpp"
+#include "primitive.hpp"
 
 
 namespace bytelang {

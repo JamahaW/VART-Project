@@ -32,6 +32,6 @@ namespace vart {
         // Белый провод -    OUT 2
 
         ///  Сервопривод смены инструмента
-        PrintToolServo = 4,
+        PrintToolServo = 15,
     };
 }
