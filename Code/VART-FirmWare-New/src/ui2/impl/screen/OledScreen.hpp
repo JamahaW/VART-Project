@@ -1,17 +1,17 @@
 #pragma once
 
-#include "ui2/abc/Display.hpp"
+#include "ui2/abc/Screen.hpp"
 #include "gfx/OLED.hpp"
 
 
 namespace ui2 {
     namespace impl {
-        namespace display {
-            struct OledDisplay : ui2::abc::Display {
+        namespace screen {
+            struct OledScreen : ui2::abc::Screen {
                 gfx::OLED oled;
 
-                static OledDisplay &getInstance() {
-                    static OledDisplay instance;
+                static OledScreen &getInstance() {
+                    static OledScreen instance;
                     return instance;
                 }
 
@@ -27,12 +27,12 @@ namespace ui2 {
 
                 uint8_t getRows() const override { return 8; }
 
-                OledDisplay(const OledDisplay &) = delete;
+                OledScreen(const OledScreen &) = delete;
 
-                OledDisplay &operator=(const OledDisplay &) = delete;
+                OledScreen &operator=(const OledScreen &) = delete;
 
             private:
-                OledDisplay() = default;
+                OledScreen() = default;
             };
         }
     }

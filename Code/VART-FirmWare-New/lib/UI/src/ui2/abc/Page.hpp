@@ -6,8 +6,8 @@
 
 #include "ui2/Event.hpp"
 #include "ui2/abc/Widget.hpp"
-#include "ui2/abc/Display.hpp"
-#include "ui2/impl/widget/Text.hpp"
+#include "ui2/abc/Screen.hpp"
+#include "ui2/impl/widget/Builtin.hpp"
 
 
 namespace ui2 {
@@ -32,7 +32,7 @@ namespace ui2 {
             void add(Page *child);
 
             /// Отрисовать страницу
-            void render(Display &display) const {
+            void render(Screen &display) const {
                 const auto gui_last_item_index = display.getRows() - 3;
 
                 display.setCursor(0, 0);

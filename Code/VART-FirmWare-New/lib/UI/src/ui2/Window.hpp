@@ -1,6 +1,7 @@
 #pragma once
 
 #include <queue>
+
 #include "ui2/abc/Page.hpp"
 #include "Event.hpp"
 
@@ -14,7 +15,7 @@ namespace ui2 {
         static constexpr int MAX_EVENTS = 8;
 
         /// Дисплей для отображения графики
-        abc::Display *display{nullptr};
+        abc::Screen *screen{nullptr};
         /// Отображаемая страница
         abc::Page *current_page{nullptr};
         /// Очередь событий
@@ -29,14 +30,14 @@ namespace ui2 {
         }
 
         /// Установить дисплей для вывода
-        void setDisplay(abc::Display &display) {
-            this->display = &display;
+        void setScreen(abc::Screen &display) {
+            this->screen = &display;
         }
 
         /// Сменить страницу
         void setPage(abc::Page &new_page) {
             current_page = &new_page;
-            display->clear();
+            screen->clear();
             renderCurrentPage();
         }
 
@@ -64,9 +65,9 @@ namespace ui2 {
 
         /// Отобразить текущую страницу
         void renderCurrentPage() const {
-            if (display == nullptr) { return; }
+            if (screen == nullptr) { return; }
             if (current_page == nullptr) { return; }
-            current_page->render(*display);
+            current_page->render(*screen);
         }
 
         /// Вызвать событие

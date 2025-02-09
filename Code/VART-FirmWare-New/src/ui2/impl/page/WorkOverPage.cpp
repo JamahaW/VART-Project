@@ -1,17 +1,17 @@
-#include "ui2/impl/Page.hpp"
-#include "ui2/impl/widget/Display.hpp"
-#include "ui2/impl/widget/Button.hpp"
+#include "VartPages.hpp"
+#include "misc/Macro.hpp"
 
 #include "vart/Device.hpp"
 
 
-using ui2::impl::widget::Button;
-using ui2::impl::widget::Display;
+using namespace ui2::impl::widget;
 using vart::Device;
 
 ui2::impl::page::WorkOverPage::WorkOverPage() :
     Page("Work Over") {
 
     add(MainPage::getInstance().to_this_page);
-    add(new Display<int>("QUIT CODE", Device::getInstance().context.quit_code));
+
+    static Display<int> display(Device::getInstance().context.quit_code);
+    add(allocStatic(Named(Text("Quit Code"), display)));
 }

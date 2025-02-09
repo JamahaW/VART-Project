@@ -1,12 +1,14 @@
+#include "VartPages.hpp"
+
+
 #define FS_NO_GLOBALS
 
 #include <SPIFFS.h>
 #include <SD.h>
 
 #include "ui2/Window.hpp"
-#include "ui2/impl/Page.hpp"
-#include "ui2/impl/widget/FileWidget.hpp"
-#include "ui2/impl/widget/Button.hpp"
+#include "ui2/impl/widget/Builtin.hpp"
+#include "ui2/impl/widget/VartWidgets.hpp"
 
 #include "vart/Device.hpp"
 #include "vart/util/Pins.hpp"
@@ -19,6 +21,7 @@ using namespace ui2::impl::page;
 using ui2::Window;
 using ui2::impl::widget::FileWidget;
 using ui2::impl::widget::Button;
+using ui2::impl::widget::Text;
 
 using bytelang::primitive::u8;
 using bytelang::core::MemIO;
@@ -32,7 +35,7 @@ static PrintingPage printing_page;
 
 static WorkOverPage work_over_page;
 
-static u8 buf[] = {
+static u8 demo[] = {
     0x01, 0x01, 0xE8, 0x03, 0x02, 0x64, 0x03, 0x4B,
     0x07, 0x00, 0x07, 0x01, 0x07, 0x02, 0x07, 0x01,
     0x07, 0x00, 0x04, 0x02, 0x05, 0x64, 0x00, 0x00,
@@ -42,9 +45,9 @@ static u8 buf[] = {
     0x00, 0x00, 0x01, 0xE8, 0x03, 0x00
 };
 
-static MockStream mock_stream(MemIO(buf, sizeof(buf)));
+static MockStream mock_stream(MemIO(demo, sizeof(demo)));
 
-[[noreturn]] static void bytecodeExecuteTask(void *v) {
+static void bytecodeExecuteTask(void *v) {
     auto stream = static_cast<Stream *>(v);
 
     auto &context = Device::getInstance().context;
@@ -54,7 +57,6 @@ static MockStream mock_stream(MemIO(buf, sizeof(buf)));
     Window::getInstance().setPage(work_over_page);
 
     vTaskDelete(nullptr);
-    while (true) { delay(1); }
 }
 
 static void startPrintingTask(Stream &stream) {
@@ -119,7 +121,7 @@ static void reloadSdPage(Page &p) {
 
 ui2::impl::page::MediaPage::MediaPage() :
     Page("Media") {
-    add(new Button("MockStream", startPrintingFromMockStream));
+    add(new Button(Text("MockStream"), startPrintingFromMockStream));
     add(new Page("SD", reloadSdPage));
     add(new Page("SPIFFS", reloadSpiffsPage));
 }

@@ -1,19 +1,18 @@
 #pragma once
 
-#include "Display.hpp"
-#include "../Event.hpp"
+#include "Screen.hpp"
+#include "ui2/Event.hpp"
 
 
 namespace ui2 {
     namespace abc {
         /// Виджет
         struct Widget {
-
             /// Отреагировать на событие
             virtual void onEvent(Event event) {};
 
             /// Отрисовать сам виджет
-            virtual void render(abc::Display &display) const = 0;
+            virtual void render(Screen &display) const = 0;
         };
     }
 }

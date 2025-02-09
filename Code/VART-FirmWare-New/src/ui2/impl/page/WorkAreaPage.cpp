@@ -1,31 +1,30 @@
-#include "ui2/impl/Page.hpp"
-#include "ui2/impl/widget/NamedSpinBox.hpp"
+#include "VartPages.hpp"
+
 #include "vart/Device.hpp"
+#include "misc/Macro.hpp"
 
 
 using vart::Device;
 
-using SB = ui2::impl::widget::NamedSpinBox<short>;
+using ui2::impl::widget::Text;
+using ui2::impl::widget::SpinBox;
+using ui2::impl::widget::Named;
 
-static constexpr const char *name = "Work Area";
-
-static constexpr const char *width = "Width";
-
-static constexpr const char *height = "Height";
-
-static constexpr const SB::In::Settings spin_box_settings = {.min = 100, .max = 4000, .step = 25,};
+static constexpr const SpinBox<short>::Settings spin_box_settings = {.min = 100, .max = 4000, .step = 25,};
 
 ui2::impl::page::WorkAreaPage::WorkAreaPage() :
-    Page(name) {
+    Page("Work Area") {
 
     auto &c = Device::getInstance().planner.getController();
     auto init_size = c.getAreaSize();
 
-    add(new SB(width, SB::In(spin_box_settings, short(init_size.x), [&c](short w) {
+    static SpinBox<short> width_spin_box(spin_box_settings, short(init_size.x), [&c](short w) {
         c.setAreaSize({double(w), c.getAreaSize().y});
-    })));
+    });
+    add(allocStatic(Named(Text("Width"), width_spin_box)));
 
-    add(new SB(height, SB::In(spin_box_settings, short(init_size.y), [&c](short h) {
+    static SpinBox<short> height_spin_box(spin_box_settings, short(init_size.x), [&c](short h) {
         c.setAreaSize({c.getAreaSize().x, double(h)});
-    })));
+    });
+    add(allocStatic(Named(Text("Height"), height_spin_box)));
 }

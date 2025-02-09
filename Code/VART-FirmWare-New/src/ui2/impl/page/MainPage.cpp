@@ -1,15 +1,18 @@
-#include "ui2/impl/Page.hpp"
+#include "VartPages.hpp"
+#include "misc/Macro.hpp"
 
 
-ui2::impl::page::MainPage::MainPage() :
+using ui2::impl::page::MainPage;
+
+MainPage::MainPage() :
     Page("Main") {
-    add(new MediaPage());
-    add(new WorkAreaPage());
-    add(new MovementServicePage());
-    add(new ToolServicePage());
+    add(allocStatic(MediaPage()));
+    add(allocStatic(WorkAreaPage()));
+    add(allocStatic(MovementServicePage()));
+    add(allocStatic(ToolServicePage()));
 }
 
-ui2::impl::page::MainPage &ui2::impl::page::MainPage::getInstance() {
+MainPage &MainPage::getInstance() {
     static MainPage instance;
     return instance;
 }

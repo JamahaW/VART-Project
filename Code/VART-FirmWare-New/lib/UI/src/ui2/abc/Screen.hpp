@@ -5,8 +5,8 @@
 
 namespace ui2 {
     namespace abc {
-        /// Дисплей для отображения виджетов
-        struct Display : Print {
+        /// Экран для отображения виджетов
+        struct Screen : Print {
 
             using PixelPosition = uint8_t;
 

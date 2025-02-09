@@ -1,26 +1,35 @@
-#include "ui2/impl/Page.hpp"
-#include "ui2/impl/widget/CheckBox.hpp"
-#include "ui2/impl/widget/NamedSpinBox.hpp"
+#include "VartPages.hpp"
+
 #include "vart/MarkerPrintTool.hpp"
 #include "vart/Device.hpp"
+#include "misc/Macro.hpp"
 
 
 using vart::Device;
 using Angle = vart::MarkerPrintTool::Angle;
 using Marker = vart::MarkerPrintTool::Marker;
 using ui2::impl::widget::CheckBox;
-using SB = ui2::impl::widget::NamedSpinBox<Angle>;
+using ui2::impl::widget::Named;
+using ui2::impl::widget::SpinBox;
+using ui2::impl::widget::Text;
 
-static constexpr const SB::In::Settings s = {0, 180, 1};
+static constexpr const SpinBox<Angle>::Settings s = {0, 180, 1};
 
-#define MarkerTool(m) (__extension__( {static SB __s(#m, SB::In(s, t.getToolAngle(m), [&t](Angle a) {t.updateToolAngle(m, a);t.setActiveTool(m);})); &__s;} ))
-
+#define ToolWidget(m) ({                                                \
+    static SpinBox <Angle> _s(s, t.getToolAngle(m), [&t](Angle a) {     \
+        t.updateToolAngle(m, a);                                        \
+        t.setActiveTool(m);                                             \
+    });                                                                 \
+    static Named _n(Text(#m), _s);                                      \
+    &_n;                                                                \
+})
 
 ui2::impl::page::ToolServicePage::ToolServicePage() :
     Page("Tool Service") {
     auto &t = vart::Device::getInstance().tool;
-    add(new CheckBox("Enable", [&t](bool e) { t.servo.setEnabled(e); }));
-    add(MarkerTool(Marker::None));
-    add(MarkerTool(Marker::Left));
-    add(MarkerTool(Marker::Right));
+
+    add(allocStatic(CheckBox(Text("Enable"), [&t](bool e) { t.servo.setEnabled(e); })));
+    add(ToolWidget(Marker::None));
+    add(ToolWidget(Marker::Left));
+    add(ToolWidget(Marker::Right));
 }

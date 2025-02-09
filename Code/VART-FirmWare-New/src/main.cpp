@@ -1,21 +1,20 @@
 #include <Arduino.h>
-
 #include <EncButton.h>
+
 #include <SPI.h>
 
 #include "misc/Macro.hpp"
-
 #include "vart/Device.hpp"
-#include "vart/util/Pins.hpp"
 
+#include "vart/util/Pins.hpp"
 #include "ui2/Window.hpp"
-#include "ui2/impl/Page.hpp"
-#include "ui2/impl/display/OledDisplay.hpp"
+#include "ui2/impl/page/VartPages.hpp"
+#include "ui2/impl/screen/OledScreen.hpp"
 
 
 using ui2::Event;
 using ui2::Window;
-using ui2::impl::display::OledDisplay;
+using ui2::impl::screen::OledScreen;
 using ui2::impl::page::MainPage;
 
 using vart::Pins;
@@ -39,11 +38,11 @@ auto eb = EncButton(Pins::UserEncoderA, Pins::UserEncoderB, Pins::UserEncoderBut
 }
 
 [[noreturn]] static void uiTaskD(void *) {
-    auto &display = OledDisplay::getInstance();
+    auto &display = OledScreen::getInstance();
     auto &w = Window::getInstance();
     display.oled.init();
 
-    w.setDisplay(display);
+    w.setScreen(display);
     w.setPage(MainPage::getInstance());
 
     while (true) {
@@ -70,9 +69,9 @@ auto eb = EncButton(Pins::UserEncoderA, Pins::UserEncoderB, Pins::UserEncoderBut
 #pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 
 void setup() {
-    createStaticTask(uiTaskD, 4096, 1)
-    createStaticTask(uiTaskI, 4096, 1)
-    createStaticTask(servoTask, 4096, 1)
+    createStaticTask(uiTaskD, 4096, 1);
+    createStaticTask(uiTaskI, 4096, 1);
+    createStaticTask(servoTask, 4096, 1);
 
     SPI.begin(Pins::SdClk, Pins::SdMiso, Pins::SdMosi, Pins::SdCs);
     Serial.begin(115200);

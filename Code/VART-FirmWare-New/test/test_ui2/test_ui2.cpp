@@ -1,12 +1,12 @@
 #include "EncButton.h"
 
 #include "gfx/OLED.hpp"
-#include "ui2/abc/Display.hpp"
+#include "ui2/abc/Screen.hpp"
 #include "ui2/Window.hpp"
 #include "ui2/abc/Page.hpp"
-#include "ui2/impl/widget/Text.hpp"
-#include "ui2/impl/widget/Button.hpp"
-#include "ui2/impl/widget/NamedSpinBox.hpp"
+#include "ui2/impl/widget/Text.cpp"
+#include "ui2/impl/widget/Button.cpp"
+#include "ui2/impl/widget/Named.cpp"
 #include "vart/util/Pins.hpp"
 
 
