@@ -36,7 +36,7 @@ static SbI16 spin_y(position_settings, 0);
 #define ModeButton(mode) (__extension__( {static Button __b(Text(#mode), [&p](){p.setMode(mode);}); &__b;} ))
 
 static void moveToTarget() {
-    Device::getInstance().planner.getController().setTargetPosition({double(spin_x.value), double(spin_y.value)});
+    Device::getInstance().planner.moveTo({double(spin_x.value), double(spin_y.value)});
 }
 
 ui2::impl::page::MovementServicePage::MovementServicePage() :

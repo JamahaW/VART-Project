@@ -5,8 +5,8 @@
 
 #include "misc/Macro.hpp"
 #include "vart/Device.hpp"
-
 #include "vart/util/Pins.hpp"
+
 #include "ui2/Window.hpp"
 #include "ui2/impl/page/VartPages.hpp"
 #include "ui2/impl/screen/OledScreen.hpp"
